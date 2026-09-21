@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Places & Traces</title>
+<style>
+:root{
+  --bg:#f5f7fa;--surface:#ffffff;--surface-2:#f2f4f8;--border:#e4e8ef;
+  --text:#151a21;--text-dim:#6b7280;--text-faint:#9aa3b0;
+  --accent:#2563eb;--accent-soft:#eff5ff;--accent-ring:rgba(37,99,235,.14);
+  --green:#16a34a;--amber:#d97706;--amber-soft:#fff7ed;--danger:#dc2626;
+  --r-lg:14px;--r-md:10px;--r-sm:7px;
+  --sh-1:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.07);
+  --sh-2:0 4px 14px rgba(16,24,40,.09);
+  --sh-3:0 12px 32px rgba(16,24,40,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{display:flex;height:100vh;width:100vw;overflow:hidden;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+
+#sidebar{width:390px;flex-shrink:0;height:100vh;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;z-index:20}
+#sidebar::-webkit-scrollbar{width:9px}
+#sidebar::-webkit-scrollbar-thumb{background:#d5dbe4;border-radius:99px;border:2px solid var(--surface)}
+#sidebar::-webkit-scrollbar-thumb:hover{background:#c0c8d4}
+
+.brand{display:flex;align-items:center;gap:11px;padding:18px 18px 16px;
+  border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:5}
+.brand-icon{width:38px;height:38px;flex-shrink:0;border-radius:11px;display:grid;place-items:center;
+  font-size:19px;background:linear-gradient(135deg,#2563eb,#4f8ef7);box-shadow:0 4px 12px rgba(37,99,235,.3)}
+.brand h1{font-size:1rem;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.brand p{font-size:.72rem;color:var(--text-faint);margin-top:2px}
+
+.section{padding:16px 18px;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.sec-head{display:flex;align-items:center;justify-content:space-between;
+  font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-faint);margin-bottom:11px}
+.sec-head .count{background:var(--surface-2);color:var(--text-dim);
+  font-size:.68rem;padding:2px 7px;border-radius:99px;letter-spacing:0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  width:100%;padding:11px 14px;border:none;border-radius:var(--r-md);
+  font-family:inherit;font-size:.845rem;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;transition:background .16s,box-shadow .16s,transform .08s,color .16s;white-space:nowrap}
+.btn:active:not(:disabled){transform:scale(.985)}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn:disabled:not([data-busy="1"]){cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.28)}
+.btn-primary:hover:not(:disabled){background:#1d4ed8}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.25)}
+.btn-green:hover:not(:disabled){background:#15803d}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:var(--sh-1)}
+.btn-ghost:hover:not(:disabled){background:var(--surface-2);border-color:#d3dae4}
+.btn-amber{background:var(--amber-soft);color:var(--amber);border:1px solid #fed7aa}
+.btn-amber:hover:not(:disabled){background:#ffedd5}
+.btn-amber:disabled{background:var(--surface-2);color:var(--text-faint);border-color:var(--border)}
+.btn-row{display:flex;gap:8px}
+
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.field label{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
+.field input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);
+  font-family:inherit;font-size:.85rem;font-weight:600;color:var(--text);background:var(--surface);
+  transition:border-color .14s,box-shadow .14s;outline:none}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:11px}
+.chip{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 4px;
+  border-radius:var(--r-md);background:var(--surface);border:1.5px solid var(--border);
+  cursor:pointer;font-family:inherit;font-size:.7rem;font-weight:600;color:var(--text-dim);transition:all .16s}
+.chip:hover{border-color:#cbd5e1;background:var(--surface-2)}
+.chip .emoji{font-size:1.1rem;line-height:1}
+.chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-ring)}
+
+.mode-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 11px;
+  border-radius:var(--r-md);background:var(--accent-soft);border:1px solid #cfe0fd;animation:slideDown .2s ease}
+.mode-bar.amber{background:var(--amber-soft);border-color:#fed7aa}
+.mode-bar.blue{background:#eff6ff;border-color:#bfdbfe}
+.mode-bar .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;
+  animation:pulse 1.4s ease-in-out infinite}
+.mode-bar.amber .dot{background:var(--amber)}
+.mode-bar.blue .dot{background:#2563eb}
+.mode-bar .txt{font-size:.75rem;font-weight:600;color:var(--accent);flex:1}
+.mode-bar.amber .txt{color:var(--amber)}
+.mode-bar.blue .txt{color:#1d4ed8}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+.group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  overflow:hidden;margin-bottom:9px;box-shadow:var(--sh-1);transition:box-shadow .18s}
+.group:hover{box-shadow:var(--sh-2)}
+.group.editing{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18), var(--sh-1)}
+.group-head{display:flex;align-items:center;gap:9px;padding:11px 12px;cursor:pointer;
+  user-select:none;transition:background .14s}
+.group-head:hover{background:var(--surface-2)}
+.caret{font-size:.6rem;color:var(--text-faint);flex-shrink:0;transition:transform .2s ease;
+  width:9px;text-align:center}
+.group.open .caret{transform:rotate(90deg)}
+.swatch{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.group-title{font-size:.83rem;font-weight:650;flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.005em}
+.zoom-btn{font-size:.68rem;font-weight:600;color:var(--accent);background:transparent;
+  border:none;padding:4px 7px;border-radius:var(--r-sm);cursor:pointer;font-family:inherit;
+  flex-shrink:0;transition:background .14s}
+.zoom-btn:hover{background:var(--accent-soft)}
+.del-btn{background:var(--surface);border:1px solid var(--border);width:28px;height:28px;
+  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.72rem;
+  flex-shrink:0;transition:all .14s;font-family:inherit}
+.del-btn:hover:not(:disabled){background:var(--danger);border-color:var(--danger);color:#fff}
+.del-btn:disabled{opacity:.6;cursor:wait}
+.group-head .del-btn{width:26px;height:26px;font-size:.68rem}
+.group-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1)}
+.group.open .group-body{grid-template-rows:1fr}
+.group-body > .inner{overflow:hidden}
+.pin-list{display:flex;flex-direction:column;gap:5px;padding:4px 9px 10px}
+.record{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r-md);
+  background:var(--surface-2);cursor:pointer;transition:background .14s}
+.record:hover{background:var(--accent-soft)}
+.record .swatch{width:8px;height:8px;border-radius:50%}
+.rec-info{flex:1;min-width:0}
+.rec-title{font-size:.8rem;font-weight:600;color:var(--text);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.rec-type{font-size:.66rem;color:var(--text-faint);text-transform:uppercase;
+  letter-spacing:.05em;margin-top:2px}
+.edit-btn{background:var(--surface);border:1px solid var(--border);width:28px;height:28px;
+  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.72rem;
+  flex-shrink:0;transition:all .14s;font-family:inherit}
+.edit-btn:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
+.edit-btn:disabled{opacity:.6;cursor:wait}
+.group-head .edit-btn{width:26px;height:26px;font-size:.68rem}
+
+.empty{text-align:center;padding:28px 16px;color:var(--text-faint);font-size:.8rem;line-height:1.6}
+.empty .big{font-size:1.8rem;display:block;margin-bottom:8px;opacity:.5}
+
+#mapWrap{flex:1;height:100%;min-width:0;position:relative;background:#e8eaed}
+#map{width:100%;height:100%}
+
+.map-badge{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;
+  align-items:center;gap:8px;background:rgba(21,26,33,.92);backdrop-filter:blur(8px);color:#fff;
+  padding:8px 15px;border-radius:99px;font-size:.76rem;font-weight:600;letter-spacing:-.005em;
+  box-shadow:var(--sh-3);z-index:1000;pointer-events:none;animation:slideDown .22s ease;white-space:nowrap}
+.map-badge .dot{width:7px;height:7px;border-radius:50%;background:#60a5fa;flex-shrink:0;
+  animation:pulse 1.4s ease-in-out infinite}
+.map-badge.amber .dot{background:#fbbf24}
+.map-badge.blue .dot{background:#2563eb}
+.map-badge[hidden]{display:none}
+
+#toasts{position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;
+  flex-direction:column;align-items:center;gap:8px;z-index:2000;pointer-events:none}
+.toast{background:rgba(21,26,33,.95);backdrop-filter:blur(10px);color:#fff;padding:10px 18px;
+  border-radius:99px;font-size:.8rem;font-weight:600;letter-spacing:-.005em;box-shadow:var(--sh-3);
+  animation:toastIn .26s cubic-bezier(.34,1.4,.64,1);display:flex;align-items:center;gap:8px;
+  max-width:88vw;word-break:break-word}
+.toast.success{background:rgba(21,128,61,.96)}
+.toast.error{background:rgba(185,28,28,.96)}
+.toast.out{animation:toastOut .22s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-10px) scale(.96)}}
+
+@media (max-width:768px){
+  body{flex-direction:column}
+  #mapWrap{width:100%;height:52vh;flex:none;order:1}
+  #sidebar{width:100%;height:48vh;order:2;border-right:none;
+    border-top:1px solid var(--border);border-radius:18px 18px 0 0;margin-top:-18px;
+    box-shadow:0 -4px 20px rgba(16,24,40,.1);position:relative;z-index:20}
+  .brand{padding:14px 16px 12px}
+  .section{padding:14px 16px}
+  .map-badge{top:12px;font-size:.72rem;padding:7px 13px}
+  #toasts{top:12px}
+}
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="brand">
+    <div class="brand-icon">🗺️</div>
+    <div>
+      <h1>Places &amp; Traces</h1>
+      <p>Map your world, one pin at a time</p>
+    </div>
+  </div>
+
+  <div class="section" style="padding-bottom:14px">
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToCurrentGPS()" style="flex:2">
+        <span>📍</span> My location
+      </button>
+      <button class="btn btn-ghost" id="refreshBtn" onclick="manualRefresh(this)" style="flex:1">
+        <span>🔄</span> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- EDIT TRACE PANEL -->
+  <div class="section" id="editPanel" hidden>
+    <div class="sec-head"><span>Editing shape</span></div>
+
+    <div class="field">
+      <label for="editTraceNameInput">Name</label>
+      <input type="text" id="editTraceNameInput" maxlength="120" autocomplete="off">
+    </div>
+
+    <div class="mode-bar blue">
+      <span class="dot"></span>
+      <span class="txt" id="editHintText">Drag dots · click edge to add · right-click dot to remove</span>
+    </div>
+
+    <p style="font-size:.7rem;color:var(--text-faint);margin-top:10px;line-height:1.6">
+      • Drag any <b>orange dot</b> to move a vertex<br>
+      • Click on the shape's <b>blue edge</b> to add a point<br>
+      • <b>Right-click</b> an orange dot to remove it
+    </p>
+
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-ghost" onclick="cancelEditingTrace()">Cancel</button>
+      <button class="btn btn-green" id="saveEditBtn" onclick="saveEditedTrace(this)">💾 Save</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head"><span>Drop pins</span></div>
+    <div class="chips" id="pinTypeChips">
+      <button class="chip active" data-type="House"><span class="emoji">🏠</span>House</button>
+      <button class="chip" data-type="Store"><span class="emoji">🛒</span>Store</button>
+      <button class="chip" data-type="Landmark"><span class="emoji">📍</span>Landmark</button>
+    </div>
+    <button id="pinModeBtn" class="btn btn-primary" onclick="togglePinMode()">
+      <span>＋</span> Start adding pins
+    </button>
+    <div id="pinActiveControls" hidden>
+      <div class="mode-bar">
+        <span class="dot"></span>
+        <span class="txt" id="pinCountText">Tap inside a traced area to drop a pin</span>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-amber" onclick="undoLastPin()">↩ Undo</button>
+        <button class="btn btn-green" id="savePinsBtn" onclick="finishPinning(this)">💾 Save</button>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.5">
+      Pins can only be placed <b>inside a traced area</b>. Draw a trace first if you don't have one.
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="sec-head"><span>Draw traces</span></div>
+    <button id="traceBtn" class="btn btn-ghost" onclick="toggleTracing()">
+      <span>✏️</span> Start manual tracing
+    </button>
+    <div id="traceActiveControls" hidden>
+      <div class="mode-bar amber">
+        <span class="dot"></span>
+        <span class="txt" id="traceCountText">Tap the map to draw a path</span>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-amber" onclick="undoLastTracePoint()">↩ Undo</button>
+        <button class="btn btn-green" id="saveTraceBtn" onclick="finishTracing(this)">💾 Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="flex:1">
+    <div class="sec-head">
+      <span>Saved places</span>
+      <span class="count" id="recordCount">0</span>
+    </div>
+    <div id="listContainer">
+      <div class="empty"><span class="big">⏳</span>Loading saved items…</div>
+    </div>
+  </div>
+</aside>
+
+<div id="mapWrap">
+  <div id="map"></div>
+  <div id="mapBadge" class="map-badge" hidden>
+    <span class="dot"></span><span id="mapBadgeText"></span>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUZYpZJJ2rOPpKJx539Dxa8VsLtZC_tTs&libraries=geometry&callback=initMap"></script>
+
+<script>
+/* ============================================================ CONFIG */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD9x7ztrDySel0ERqDRS558dRZVVXsGMJS37c2pBOYC3DolP96R9F2M3LfpJXycW9rlA/exec";
+const TRACE_RADIUS_METERS = 300;
+const MAP_STYLE = [
+  {elementType:"geometry",stylers:[{color:"#f5f7fa"}]},
+  {elementType:"labels.icon",stylers:[{visibility:"off"}]},
+  {elementType:"labels.text.fill",stylers:[{color:"#8a94a6"}]},
+  {elementType:"labels.text.stroke",stylers:[{color:"#ffffff"}]},
+  {featureType:"administrative",elementType:"geometry",stylers:[{color:"#dfe4ec"}]},
+  {featureType:"poi",elementType:"geometry",stylers:[{color:"#e9edf3"}]},
+  {featureType:"poi.park",elementType:"geometry",stylers:[{color:"#dcefdd"}]},
+  {featureType:"road",elementType:"geometry",stylers:[{color:"#ffffff"}]},
+  {featureType:"road",elementType:"labels.text.fill",stylers:[{color:"#9aa3b0"}]},
+  {featureType:"road.highway",elementType:"geometry",stylers:[{color:"#f0d9b5"}]},
+  {featureType:"transit",stylers:[{visibility:"off"}]},
+  {featureType:"water",elementType:"geometry",stylers:[{color:"#c9ddf0"}]}
+];
+
+/* ============================================================ STATE */
+let map;
+let userLocation = { lat: 13.5571, lng: 123.3650 };
+let isTracing = false;
+let currentTracePoints = [];
+let activePolyline = null;
+let activePolygon = null;
+let tempMarkers = [];
+let isPinning = false;
+let currentTempPins = [];
+let tempPinMarkers = [];
+let allRecords = [];
+let allTraces = [];
+let drawnOverlays = [];
+const featureIndex = new Map();
+let lastRecordCount = 0;
+
+/* ---- shape-editing state ---- */
+let isEditing = false;
+let editingTraceItem = null;
+let editingCoords = [];
+let editingMarkers = [];
+let editingPolyline = null;
+let editingFill = null;
+
+/* ============================================================ BUTTON BUSY HELPER */
+async function withButtonBusy(btn, busyText, fn){
+  if (!btn) return await fn();
+  if (btn.dataset.busy === '1') return;
+  const originalHTML = btn.innerHTML;
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  btn.innerHTML = busyText;
+  try {
+    return await fn();
+  } finally {
+    btn.dataset.busy = '';
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
+/* ============================================================ HELPERS */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function getRandomColor(){
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) color += letters[Math.floor(Math.random() * 12) + 4];
+  return color;
+}
+function getIconForType(type){
+  const t = (type || "").toLowerCase();
+  if (t.includes("house")){
+    return {
+      url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" height="32" width="32" viewBox="0 0 24 24" fill="#2563eb"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>'),
+      scaledSize:new google.maps.Size(32,32), anchor:new google.maps.Point(16,16)
+    };
+  }
+  if (t.includes("store") || t.includes("shop")){
+    return {
+      url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" height="32" width="32" viewBox="0 0 24 24" fill="#16a34a"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>'),
+      scaledSize:new google.maps.Size(32,32), anchor:new google.maps.Point(16,16)
+    };
+  }
+  return {
+    url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" height="32" width="32" viewBox="0 0 24 24" fill="#dc2626"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'),
+    scaledSize:new google.maps.Size(32,32), anchor:new google.maps.Point(16,32)
+  };
+}
+function distanceToSegmentMeters(p, a, b){
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const latRef = toRad((a.lat + b.lat) / 2);
+  const X = lng => toRad(lng) * R * Math.cos(latRef);
+  const Y = lat => toRad(lat) * R;
+  const px = X(p.lng), py = Y(p.lat);
+  const ax = X(a.lng), ay = Y(a.lat);
+  const bx = X(b.lng), by = Y(b.lat);
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx*dx + dy*dy;
+  let t = len2 === 0 ? 0 : ((px-ax)*dx + (py-ay)*dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t*dx), py - (ay + t*dy));
+}
+function distanceToPathMeters(p, coords){
+  let min = Infinity;
+  for (let i = 0; i < coords.length - 1; i++){
+    min = Math.min(min, distanceToSegmentMeters(p, coords[i], coords[i+1]));
+  }
+  if (coords.length === 1) min = distanceToSegmentMeters(p, coords[0], coords[0]);
+  return min;
+}
+function haversineMeters(a, b){
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+  const x = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+function projectPointOnSegment(p, a, b){
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const latRef = toRad((a.lat + b.lat) / 2);
+  const X = lng => toRad(lng) * R * Math.cos(latRef);
+  const Y = lat => toRad(lat) * R;
+  const px = X(p.lng), py = Y(p.lat);
+  const ax = X(a.lng), ay = Y(a.lat);
+  const bx = X(b.lng), by = Y(b.lat);
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx*dx + dy*dy;
+  let t = len2 === 0 ? 0 : ((px-ax)*dx + (py-ay)*dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const x = ax + t*dx, y = ay + t*dy;
+  const lat = y / R * 180 / Math.PI;
+  const lng = x / (R * Math.cos(latRef)) * 180 / Math.PI;
+  return { lat, lng };
+}
+
+/* ============================================================ RAY-CASTING */
+function pointInPolygonRayCast(lat, lng, coords){
+  let inside = false;
+  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++){
+    const xi = Number(coords[i].lng), yi = Number(coords[i].lat);
+    const xj = Number(coords[j].lng), yj = Number(coords[j].lat);
+    const intersect = ((yi > lat) !== (yj > lat))
+      && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function pointInRing_(latLng, coords){
+  if (window.google && google.maps.geometry && google.maps.geometry.poly){
+    try {
+      const poly = new google.maps.Polygon({ paths: coords, geodesic: true });
+      if (google.maps.geometry.poly.containsLocation(latLng, poly)) return true;
+    } catch(e){ /* fall through */ }
+  }
+  return pointInPolygonRayCast(latLng.lat(), latLng.lng(), coords);
+}
+
+/* ============================================================ TRACE MEMBERSHIP */
+function findTraceContaining(latLng){
+  for (const t of allTraces){
+    if (t.coords.length >= 3){
+      if (pointInRing_(latLng, t.coords)) return t;
+    } else if (t.coords.length >= 1){
+      const d = distanceToPathMeters(
+        { lat: latLng.lat(), lng: latLng.lng() }, t.coords
+      );
+      if (d <= TRACE_RADIUS_METERS) return t;
+    }
+  }
+  return null;
+}
+
+/* ============================================================ TOASTS */
+function toast(msg, kind = 'info', ms = 2600){
+  const box = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind !== 'info' ? ' ' + kind : '');
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 240);
+  }, ms);
+}
+
+/* ============================================================ API */
+async function submitToSheet(payload){
+  await fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+}
+async function deleteOnServer(id){
+  const url = APPS_SCRIPT_URL + "?action=delete"
+            + "&id=" + encodeURIComponent(id)
+            + "&t=" + Date.now();
+  const res = await fetch(url);
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); }
+  catch(e){ throw new Error("Invalid response from server"); }
+  if (!json || json.result !== 'success'){
+    throw new Error((json && json.message) || 'Server rejected the request');
+  }
+  return json;
+}
+
+/* ============================================================ REFRESH WITH RETRY */
+async function refreshUntil(expectedAtLeast, maxAttempts = 6){
+  for (let attempt = 1; attempt <= maxAttempts; attempt++){
+    await new Promise(r => setTimeout(r, attempt === 1 ? 600 : 900));
+    clearOverlays();
+    const count = await fetchPlacesFromSheet();
+    console.log(`[refresh] attempt ${attempt} → ${count} records (target: ${expectedAtLeast})`);
+    if (typeof count === 'number' && count >= expectedAtLeast){
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ============================================================ MAP */
+function initMap(){
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: userLocation, zoom: 14, styles: MAP_STYLE,
+    mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+    clickableIcons: false
+  });
+
+  map.addListener("click", (e) => {
+    if (isTracing) addTracePoint(e.latLng);
+    else if (isPinning) addTempPin(e.latLng);
+  });
+
+  if (navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+        map.setCenter(userLocation);
+        const you = new google.maps.Marker({
+          position: userLocation, map, title: "You are here", zIndex: 999,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8, fillColor: "#2563eb", fillOpacity: 1,
+            strokeColor: "#ffffff", strokeWeight: 3
+          }
+        });
+        drawnOverlays.push(you);
+      },
+      () => toast("Location permission denied", "error")
+    );
+  }
+
+  fetchPlacesFromSheet();
+}
+
+/* ============================================================ PIN CHIPS */
+document.getElementById('pinTypeChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#pinTypeChips .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+});
+function selectedPinType(){
+  const active = document.querySelector('#pinTypeChips .chip.active');
+  return active ? active.dataset.type : 'Landmark';
+}
+
+/* ============================================================ PIN MODE */
+function togglePinMode(){
+  if (isEditing){ toast("Finish editing the shape first", "error"); return; }
+  if (isTracing){ toast("Finish or cancel your current trace first", "error"); return; }
+  if (allTraces.length === 0){
+    toast("No traced areas yet — draw a trace first.", "error", 4000);
+    return;
+  }
+
+  isPinning = true; currentTempPins = [];
+  document.getElementById("pinModeBtn").hidden = true;
+  document.getElementById("traceBtn").disabled = true;
+  document.getElementById("pinActiveControls").hidden = false;
+  showMapBadge("Pin mode — tap inside a traced area");
+}
+
+function addTempPin(latLng){
+  if (allTraces.length === 0){
+    toast("No traces loaded yet — try refreshing.", "error", 3200);
+    return;
+  }
+  const containing = findTraceContaining(latLng);
+  if (!containing){
+    toast(`Pins must be inside a traced area. (${allTraces.length} trace${allTraces.length>1?'s':''} loaded)`, "error", 3600);
+    return;
+  }
+  const selectedType = selectedPinType();
+  currentTempPins.push({
+    id: Date.now().toString() + Math.random(),
+    latitude: latLng.lat(), longitude: latLng.lng(),
+    title: selectedType, type: selectedType, coordinates: null
+  });
+  const marker = new google.maps.Marker({
+    position: latLng, map, title: selectedType,
+    icon: getIconForType(selectedType),
+    animation: google.maps.Animation.DROP
+  });
+  tempPinMarkers.push(marker);
+
+  const n = currentTempPins.length;
+  document.getElementById("pinCountText").textContent =
+    `${n} pin${n > 1 ? 's' : ''} ready · inside "${containing.item.title}"`;
+}
+
+function undoLastPin(){
+  if (!currentTempPins.length) return;
+  currentTempPins.pop();
+  const m = tempPinMarkers.pop();
+  if (m) m.setMap(null);
+  document.getElementById("pinCountText").textContent = currentTempPins.length
+    ? `${currentTempPins.length} pin${currentTempPins.length > 1 ? 's' : ''} ready`
+    : 'Tap inside a traced area to drop a pin';
+}
+
+async function finishPinning(btn){
+  if (!currentTempPins.length){ toast("Drop at least one pin first", "error"); return; }
+
+  await withButtonBusy(btn, "⏳ Saving…", async () => {
+    const pins = currentTempPins.slice();
+    isPinning = false;
+
+    const n = pins.length;
+    const expectedTotal = lastRecordCount + n;
+
+    toast(`Saving ${n} pin(s)…`);
+    let failed = 0;
+    for (const pin of pins){
+      try { await submitToSheet(pin); }
+      catch(e){ console.error("Network error saving pin:", pin, e); failed++; }
+    }
+    if (failed > 0){
+      toast(`${failed} of ${n} failed to send (network).`, "error", 5000);
+    } else {
+      toast(`${n} pin(s) submitted — refreshing…`, "success");
+    }
+    resetPinMode();
+
+    const ok = await refreshUntil(expectedTotal);
+    if (ok){
+      toast(`Synced — ${n} new pin(s) visible`, "success");
+    } else {
+      toast("Saved, but the list hasn't updated yet. Tap 🔄 Refresh.", "error", 6000);
+    }
+  });
+}
+
+function resetPinMode(){
+  isPinning = false; currentTempPins = [];
+  tempPinMarkers.forEach(m => m.setMap(null));
+  tempPinMarkers = [];
+  document.getElementById("pinModeBtn").hidden = false;
+  document.getElementById("traceBtn").disabled = false;
+  document.getElementById("pinActiveControls").hidden = true;
+  hideMapBadge();
+}
+
+/* ============================================================ TRACE MODE */
+function toggleTracing(){
+  if (isEditing){ toast("Finish editing the shape first", "error"); return; }
+  if (isPinning){ toast("Finish or cancel your current pinning session first", "error"); return; }
+  isTracing = true; currentTracePoints = [];
+  document.getElementById("traceBtn").hidden = true;
+  document.getElementById("pinModeBtn").disabled = true;
+  document.getElementById("traceActiveControls").hidden = false;
+  renderActiveTrace(); updateTraceControls();
+  showMapBadge("Trace mode — tap the map to draw", true);
+}
+function renderActiveTrace(){
+  if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
+  if (activePolygon){ activePolygon.setMap(null); activePolygon = null; }
+  if (currentTracePoints.length < 2) return;
+  if (currentTracePoints.length >= 3){
+    activePolygon = new google.maps.Polygon({
+      paths: currentTracePoints, geodesic: true,
+      strokeColor: "#d97706", strokeOpacity: 0.95, strokeWeight: 4,
+      fillColor: "#d97706", fillOpacity: 0.18,
+      clickable: false, map
+    });
+  } else {
+    activePolyline = new google.maps.Polyline({
+      path: currentTracePoints, geodesic: true,
+      strokeColor: "#d97706", strokeOpacity: 0.95, strokeWeight: 4,
+      clickable: false, map
+    });
+  }
+}
+function addTracePoint(latLng){
+  currentTracePoints.push(latLng);
+  const marker = new google.maps.Marker({
+    position: latLng, map,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 5, fillColor: "#d97706", fillOpacity: 1,
+      strokeWeight: 2, strokeColor: "#ffffff"
+    }
+  });
+  tempMarkers.push(marker);
+  renderActiveTrace(); updateTraceControls();
+}
+function undoLastTracePoint(){
+  if (!currentTracePoints.length) return;
+  currentTracePoints.pop();
+  const m = tempMarkers.pop();
+  if (m) m.setMap(null);
+  renderActiveTrace(); updateTraceControls();
+}
+function updateTraceControls(){
+  const n = currentTracePoints.length;
+  document.getElementById("traceCountText").textContent =
+    n === 0 ? "Tap the map to draw a path"
+            : `${n} point${n > 1 ? 's' : ''}${n >= 3 ? ' · area' : ''}`;
+}
+async function finishTracing(btn){
+  if (currentTracePoints.length < 3){
+    toast("Tap at least 3 points to make an area", "error"); return;
+  }
+  const title = prompt("Name this traced area:", "Property Boundary");
+  if (!title) return;
+  const pointsSnapshot = currentTracePoints.map(pt => ({ lat: pt.lat(), lng: pt.lng() }));
+
+  await withButtonBusy(btn, "⏳ Saving…", async () => {
+    isTracing = false;
+    const traceRecord = {
+      id: Date.now().toString(), title, type: "trace",
+      coordinates: JSON.stringify({
+        points: pointsSnapshot,
+        color: getRandomColor(),
+        closed: true
+      })
+    };
+    if (traceRecord.coordinates.length > 49000){
+      toast(`Trace is too big (${pointsSnapshot.length} points). Try fewer points.`, "error", 6000);
+      isTracing = true;
+      return;
+    }
+    const expectedTotal = lastRecordCount + 1;
+    toast("Saving trace…");
+    try {
+      await submitToSheet(traceRecord);
+      toast("Trace submitted — refreshing…", "success");
+    } catch(e){
+      console.error("Network error saving trace:", e);
+      toast("Save failed: network error", "error", 5000);
+    }
+    resetTraceMode();
+    const ok = await refreshUntil(expectedTotal);
+    if (ok){
+      toast(`Synced — "${title}" visible`, "success");
+    } else {
+      toast("Saved, but the list hasn't updated yet. Tap 🔄 Refresh.", "error", 6000);
+    }
+  });
+}
+function resetTraceMode(){
+  isTracing = false; currentTracePoints = [];
+  tempMarkers.forEach(m => m.setMap(null));
+  tempMarkers = [];
+  if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
+  if (activePolygon){ activePolygon.setMap(null); activePolygon = null; }
+  document.getElementById("traceBtn").hidden = false;
+  document.getElementById("pinModeBtn").disabled = false;
+  document.getElementById("traceActiveControls").hidden = true;
+  hideMapBadge();
+}
+
+/* ============================================================
+   SHAPE EDIT MODE
+   ============================================================ */
+function startEditingTrace(itemId){
+  if (isPinning || isTracing){
+    toast("Finish your current action first", "error");
+    return;
+  }
+  if (isEditing){
+    toast("Already editing a shape", "error");
+    return;
+  }
+
+  const t = allTraces.find(x => String(x.item.id) === String(itemId));
+  if (!t){ toast("Trace not found", "error"); return; }
+  if (t.coords.length < 3){ toast("Only shapes with 3+ points can be edited", "error"); return; }
+
+  isEditing = true;
+  editingTraceItem = t.item;
+  editingCoords = t.coords.map(c => ({ lat: Number(c.lat), lng: Number(c.lng) }));
+
+  // Show the edit panel
+  const panel = document.getElementById("editPanel");
+  panel.hidden = false;
+  const input = document.getElementById("editTraceNameInput");
+  input.value = t.item.title || "";
+
+  document.getElementById("pinModeBtn").disabled = true;
+  document.getElementById("traceBtn").disabled = true;
+
+  // Highlight the group in the sidebar
+  document.querySelectorAll('.group').forEach(g => g.classList.remove('editing'));
+  const row = document.querySelector(`[data-shape-edit="${CSS.escape(String(itemId))}"]`);
+  if (row) row.closest('.group').classList.add('editing');
+
+  showMapBadge("Edit shape — drag dots · click edge to add · right-click dot to remove", true);
+
+  renderEditingShape();
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Focus the name field for quick editing
+  setTimeout(() => { input.focus(); input.select(); }, 250);
+}
+
+function renderEditingShape(){
+  if (editingPolyline){ editingPolyline.setMap(null); editingPolyline = null; }
+  if (editingFill){ editingFill.setMap(null); editingFill = null; }
+  editingMarkers.forEach(m => m.setMap(null));
+  editingMarkers = [];
+
+  if (editingCoords.length < 2) return;
+
+  // Fill layer — not clickable so plain map clicks still pass through
+  editingFill = new google.maps.Polygon({
+    paths: editingCoords,
+    geodesic: true,
+    strokeColor: "#2563eb",
+    strokeOpacity: 1,
+    strokeWeight: 6,
+    fillColor: "#2563eb",
+    fillOpacity: 0.12,
+    clickable: false,
+    map
+  });
+
+  // Invisible wide hit-target line for edge clicks
+  editingPolyline = new google.maps.Polyline({
+    path: editingCoords,
+    geodesic: true,
+    strokeColor: "#1d4ed8",
+    strokeOpacity: 0,
+    strokeWeight: 18,
+    clickable: true,
+    map
+  });
+  editingPolyline.addListener("click", (e) => handleEdgeClick(e.latLng));
+
+  // Vertex dots
+  editingCoords.forEach((c, i) => {
+    const marker = new google.maps.Marker({
+      position: c,
+      map,
+      draggable: true,
+      cursor: "grab",
+      zIndex: 500 + i,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: "#f59e0b",
+        fillOpacity: 1,
+        strokeWeight: 2.5,
+        strokeColor: "#ffffff"
+      }
+    });
+    marker.addListener("dragend", (e) => {
+      editingCoords[i] = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      updateEditingPaths();
+    });
+    marker.addListener("rightclick", () => removeEditingVertex(i));
+    editingMarkers.push(marker);
+  });
+}
+
+function updateEditingPaths(){
+  if (editingPolyline) editingPolyline.setPath(editingCoords);
+  if (editingFill) editingFill.setPath(editingCoords);
+}
+
+function handleEdgeClick(latLng){
+  const pt = { lat: latLng.lat(), lng: latLng.lng() };
+
+  let bestI = 0, bestDist = Infinity, bestProjected = pt;
+  for (let i = 0; i < editingCoords.length; i++){
+    const a = editingCoords[i];
+    const b = editingCoords[(i + 1) % editingCoords.length];
+    const proj = projectPointOnSegment(pt, a, b);
+    const d = haversineMeters(pt, proj);
+    if (d < bestDist){ bestDist = d; bestI = i; bestProjected = proj; }
+  }
+
+  const metersPerPixel = 156543.03392 * Math.cos(pt.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+  const threshold = 30 * metersPerPixel;
+  if (bestDist > threshold) return;
+
+  editingCoords.splice(bestI + 1, 0, bestProjected);
+  renderEditingShape();
+  toast(`Added point (${editingCoords.length} total)`, "success", 1600);
+}
+
+function removeEditingVertex(index){
+  if (editingCoords.length <= 3){
+    toast("A shape needs at least 3 points", "error");
+    return;
+  }
+  editingCoords.splice(index, 1);
+  renderEditingShape();
+  toast(`Removed point (${editingCoords.length} remaining)`, "info", 1600);
+}
+
+async function saveEditedTrace(btn){
+  if (editingCoords.length < 3){ toast("Need at least 3 points", "error"); return; }
+
+  const nameInput = document.getElementById("editTraceNameInput");
+  const newTitle = (nameInput.value || "").trim();
+
+  if (!newTitle){
+    toast("Please enter a name for this shape", "error");
+    nameInput.focus();
+    return;
+  }
+
+  await withButtonBusy(btn, "⏳ Saving…", async () => {
+    // Preserve the original colour; fall back if missing
+    let color = "#2563eb";
+    try {
+      const parsed = JSON.parse(editingTraceItem.coordinates);
+      if (parsed && parsed.color) color = parsed.color;
+    } catch(e){}
+
+    const updated = {
+      ...editingTraceItem,
+      title: newTitle,                        // <-- name is included
+      coordinates: JSON.stringify({
+        points: editingCoords,
+        color,
+        closed: true
+      })
+    };
+
+    if (updated.coordinates.length > 49000){
+      toast(`Shape is too big (${editingCoords.length} points).`, "error", 6000);
+      return;
+    }
+
+    const expectedTotal = lastRecordCount;   // no count change on update
+
+    toast("Saving changes…");
+    try {
+      await submitToSheet(updated);
+      toast("Changes submitted — refreshing…", "success");
+    } catch(e){
+      console.error("Error saving shape:", e);
+      toast("Save failed: network error", "error", 5000);
+    }
+
+    cancelEditingTrace();
+    const ok = await refreshUntil(expectedTotal, 4);
+    toast(ok ? "Synced — shape updated" : "Saved, but the list hasn't refreshed. Tap 🔄 Refresh.", ok ? "success" : "error", 5000);
+  });
+}
+
+function cancelEditingTrace(){
+  isEditing = false;
+  editingTraceItem = null;
+  editingCoords = [];
+
+  editingMarkers.forEach(m => m.setMap(null));
+  editingMarkers = [];
+  if (editingPolyline){ editingPolyline.setMap(null); editingPolyline = null; }
+  if (editingFill){ editingFill.setMap(null); editingFill = null; }
+
+  document.getElementById("editPanel").hidden = true;
+  document.getElementById("pinModeBtn").disabled = false;
+  document.getElementById("traceBtn").disabled = false;
+
+  document.querySelectorAll('.group.editing').forEach(g => g.classList.remove('editing'));
+  hideMapBadge();
+}
+
+/* ============================================================ MAP BADGE */
+function showMapBadge(text, amber = false){
+  const b = document.getElementById('mapBadge');
+  if (!b) return;
+  b.hidden = false;
+  b.classList.toggle('amber', amber);
+  const t = document.getElementById('mapBadgeText');
+  if (t) t.textContent = text;
+}
+function hideMapBadge(){
+  const b = document.getElementById('mapBadge');
+  if (b) b.hidden = true;
+}
+
+/* ============================================================ DATA */
+function clearOverlays(){
+  drawnOverlays.forEach(o => o.setMap(null));
+  drawnOverlays = [];
+  featureIndex.clear();
+}
+
+async function manualRefresh(btn){
+  await withButtonBusy(btn, "⏳…", async () => {
+    toast("Refreshing…");
+    try {
+      clearOverlays();
+      const count = await fetchPlacesFromSheet();
+      toast(`Loaded ${count} record${count === 1 ? '' : 's'}`, "success");
+    } catch(e){
+      toast("Refresh failed", "error");
+    }
+  });
+}
+
+async function fetchPlacesFromSheet(){
+  const listContainer = document.getElementById("listContainer");
+  try {
+    const response = await fetch(APPS_SCRIPT_URL + "?nocache=" + Date.now());
+    allRecords = await response.json();
+    listContainer.innerHTML = "";
+    if (!Array.isArray(allRecords) || allRecords.length === 0){
+      allTraces = [];
+      lastRecordCount = 0;
+      listContainer.innerHTML =
+        `<div class="empty"><span class="big">🗺️</span>No saved items yet.<br>Start by drawing a trace, then add pins inside it.</div>`;
+      document.getElementById('recordCount').textContent = '0';
+      return 0;
+    }
+
+    const traces = [], pins = [];
+
+    allRecords.forEach(item => {
+      if (item.coordinates && item.coordinates !== ""){
+        let coords = [], strokeColor = getRandomColor();
+        try {
+          let parsed = JSON.parse(item.coordinates);
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+          if (Array.isArray(parsed)) coords = parsed;
+          else if (parsed && parsed.points){
+            coords = parsed.points;
+            strokeColor = parsed.color || strokeColor;
+          }
+        } catch(e){ return; }
+        if (coords.length > 0) traces.push({ item, coords, strokeColor });
+      } else if (item.latitude && item.longitude){
+        pins.push({ item, pos: { lat: parseFloat(item.latitude), lng: parseFloat(item.longitude) } });
+      }
+    });
+
+    allTraces = traces;
+
+    const traceGroupMap = {};
+    traces.forEach(t => {
+      traceGroupMap[t.item.id] = { trace: t, pins: [] };
+      featureIndex.set(String(t.item.id), { kind:'trace', coords: t.coords });
+
+      let poly;
+      if (t.coords.length >= 3){
+        poly = new google.maps.Polygon({
+          paths: t.coords, geodesic: true,
+          strokeColor: t.strokeColor, strokeOpacity: 0.85, strokeWeight: 4,
+          fillColor: t.strokeColor, fillOpacity: 0.18,
+          clickable: false, map
+        });
+      } else {
+        poly = new google.maps.Polyline({
+          path: t.coords, geodesic: true,
+          strokeColor: t.strokeColor, strokeOpacity: 0.85, strokeWeight: 4,
+          clickable: false, map
+        });
+      }
+      drawnOverlays.push(poly);
+
+      const startDot = new google.maps.Marker({
+        position: t.coords[0], map, title: t.item.title,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 6, fillColor: t.strokeColor, fillOpacity: 1,
+          strokeWeight: 2, strokeColor: "#ffffff"
+        }
+      });
+      drawnOverlays.push(startDot);
+    });
+
+    const unassignedPins = [];
+    pins.forEach(pinObj => {
+      const containing = findTraceContaining(new google.maps.LatLng(pinObj.pos));
+      if (containing){
+        traceGroupMap[containing.item.id].pins.push(pinObj);
+      } else {
+        unassignedPins.push(pinObj);
+      }
+      featureIndex.set(String(pinObj.item.id), { kind:'pin', pos: pinObj.pos });
+
+      const marker = new google.maps.Marker({
+        position: pinObj.pos, map, title: pinObj.item.title,
+        icon: getIconForType(pinObj.item.type)
+      });
+      drawnOverlays.push(marker);
+    });
+
+    Object.values(traceGroupMap).forEach(g =>
+      renderTraceGroup(g.trace.item, g.trace.coords, g.trace.strokeColor, g.pins)
+    );
+    if (unassignedPins.length) renderUnassignedGroup(unassignedPins);
+
+    lastRecordCount = allRecords.length;
+    document.getElementById('recordCount').textContent = allRecords.length;
+
+    console.log(`[Places & Traces] Loaded ${allTraces.length} traces, ${pins.length} pins, ${allRecords.length} total.`);
+    return allRecords.length;
+
+  } catch (error){
+    console.error("Error loading sheet data:", error);
+    listContainer.innerHTML =
+      `<div class="empty" style="color:var(--danger)"><span class="big">⚠️</span>Couldn't load your saved items.</div>`;
+    return -1;
+  }
+}
+
+/* ============================================================ RENDERING */
+function renderTraceGroup(traceItem, coords, color, assignedPins){
+  const container = document.getElementById("listContainer");
+  const group = document.createElement("div");
+  group.className = "group";
+  let pinsHtml = "";
+  if (assignedPins.length === 0){
+    pinsHtml = `<div style="font-size:.72rem;color:var(--text-faint);padding:8px 4px 4px;text-align:center;">No pins inside this trace yet</div>`;
+  } else {
+    pinsHtml = assignedPins.map(p => `
+      <div class="record" data-goto="${esc(p.item.id)}">
+        <div class="swatch" style="background:#16a34a"></div>
+        <div class="rec-info">
+          <div class="rec-title">${esc(p.item.title)}</div>
+          <div class="rec-type">${esc(p.item.type)}</div>
+        </div>
+        <button class="edit-btn" data-edit="${esc(p.item.id)}" title="Rename">✏️</button>
+        <button class="del-btn" data-del="${esc(p.item.id)}" data-del-title="${esc(p.item.title)}" data-del-kind="pin" title="Delete pin">🗑</button>
+      </div>`).join("");
+  }
+  group.innerHTML = `
+    <div class="group-head" data-toggle>
+      <span class="caret">▶</span>
+      <span class="swatch" style="background:${esc(color)}"></span>
+      <span class="group-title">${esc(traceItem.title)}</span>
+      <span style="font-size:.66rem;color:var(--text-faint);flex-shrink:0">${assignedPins.length}</span>
+      <button class="zoom-btn" data-zoom="${esc(traceItem.id)}">Zoom</button>
+      <button class="edit-btn" data-shape-edit="${esc(traceItem.id)}" title="Edit shape">✏️</button>
+      <button class="del-btn" data-del="${esc(traceItem.id)}" data-del-title="${esc(traceItem.title)}" data-del-kind="trace" title="Delete trace">🗑</button>
+    </div>
+    <div class="group-body"><div class="inner"><div class="pin-list">${pinsHtml}</div></div></div>
+  `;
+  container.appendChild(group);
+}
+function renderUnassignedGroup(unassignedPins){
+  const container = document.getElementById("listContainer");
+  const group = document.createElement("div");
+  group.className = "group";
+  const pinsHtml = unassignedPins.map(p => `
+    <div class="record" data-goto="${esc(p.item.id)}">
+      <div class="swatch" style="background:#94a3b8"></div>
+      <div class="rec-info">
+        <div class="rec-title">${esc(p.item.title)}</div>
+        <div class="rec-type">${esc(p.item.type)}</div>
+      </div>
+      <button class="edit-btn" data-edit="${esc(p.item.id)}" title="Rename">✏️</button>
+      <button class="del-btn" data-del="${esc(p.item.id)}" data-del-title="${esc(p.item.title)}" data-del-kind="pin" title="Delete pin">🗑</button>
+    </div>`).join("");
+  group.innerHTML = `
+    <div class="group-head" data-toggle>
+      <span class="caret">▶</span>
+      <span class="swatch" style="background:#94a3b8"></span>
+      <span class="group-title" style="color:var(--text-dim)">Unassigned pins (legacy)</span>
+      <span style="font-size:.66rem;color:var(--text-faint);flex-shrink:0">${unassignedPins.length}</span>
+    </div>
+    <div class="group-body"><div class="inner"><div class="pin-list">${pinsHtml}</div></div></div>
+  `;
+  container.appendChild(group);
+}
+
+/* ============================================================ LIST CLICKS */
+document.getElementById('listContainer').addEventListener('click', (e) => {
+  const shapeEditBtn = e.target.closest('[data-shape-edit]');
+  if (shapeEditBtn){
+    e.stopPropagation();
+    startEditingTrace(shapeEditBtn.dataset.shapeEdit);
+    return;
+  }
+
+  const delBtn = e.target.closest('[data-del]');
+  if (delBtn){
+    e.stopPropagation();
+    deleteRecord(delBtn.dataset.del, delBtn.dataset.delTitle, delBtn.dataset.delKind, delBtn);
+    return;
+  }
+
+  const editBtn = e.target.closest('[data-edit]');
+  if (editBtn){
+    e.stopPropagation();
+    const item = allRecords.find(r => String(r.id) === editBtn.dataset.edit);
+    if (item) editItemName(item, editBtn);
+    return;
+  }
+
+  const zoomBtn = e.target.closest('[data-zoom]');
+  if (zoomBtn){
+    e.stopPropagation();
+    const f = featureIndex.get(zoomBtn.dataset.zoom);
+    if (f && f.kind === 'trace') fitBoundsToCoords(f.coords);
+    return;
+  }
+
+  const gotoEl = e.target.closest('[data-goto]');
+  if (gotoEl){
+    const f = featureIndex.get(gotoEl.dataset.goto);
+    if (f && f.kind === 'pin'){ map.panTo(f.pos); map.setZoom(17); }
+    return;
+  }
+
+  const head = e.target.closest('[data-toggle]');
+  if (head){ head.closest('.group').classList.toggle('open'); }
+});
+
+/* ============================================================ DELETE */
+async function deleteRecord(id, title, kind, btn){
+  if (isEditing){ toast("Finish editing the shape first", "error"); return; }
+
+  const message = kind === 'trace'
+    ? `Delete the trace "${title}"?\n\nPins inside it will NOT be deleted — they'll just become unassigned.\n\nThis can't be undone.`
+    : `Delete the pin "${title}"?\n\nThis can't be undone.`;
+  if (!confirm(message)) return;
+
+  await withButtonBusy(btn, "⏳", async () => {
+    toast("Deleting…");
+    try {
+      await deleteOnServer(id);
+      toast("Deleted", "success");
+      await new Promise(r => setTimeout(r, 400));
+      clearOverlays();
+      await fetchPlacesFromSheet();
+    } catch(e){
+      console.error("Delete failed:", e);
+      toast(`Delete failed: ${e.message}`, "error", 5000);
+    }
+  });
+}
+
+/* ============================================================ EDIT NAME (pins only now) */
+async function editItemName(item, btn){
+  const newTitle = prompt("Enter new name:", item.title);
+  if (!newTitle || newTitle === item.title) return;
+
+  await withButtonBusy(btn, "⏳", async () => {
+    toast("Renaming…");
+    try {
+      await submitToSheet({ ...item, title: newTitle });
+      toast("Renamed", "success");
+      await new Promise(r => setTimeout(r, 1200));
+      clearOverlays();
+      await fetchPlacesFromSheet();
+    } catch(err){
+      console.error("Network error renaming:", err);
+      toast("Rename failed: network error", "error", 5000);
+    }
+  });
+}
+
+function fitBoundsToCoords(coords){
+  const bounds = new google.maps.LatLngBounds();
+  coords.forEach(pt => bounds.extend(pt));
+  map.fitBounds(bounds, { top: 70, right: 70, bottom: 70, left: 70 });
+}
+function goToCurrentGPS(){
+  map.panTo(userLocation);
+  map.setZoom(16);
+  toast("Centered on your location");
+}
+</script>
+</body>
+</html>
