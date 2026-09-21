@@ -112,7 +112,6 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 
-/* ---------- GROUPS ---------- */
 .group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
   overflow:hidden;margin-bottom:9px;box-shadow:var(--sh-1);transition:box-shadow .18s}
 .group.editing{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18), var(--sh-1)}
@@ -143,7 +142,6 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .group.open .group-body{grid-template-rows:1fr}
 .group-body > .inner{overflow:hidden}
 
-/* ---------- PIN SUMMARY CHIPS ---------- */
 .pin-summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px;
   padding:0 12px 11px 12px}
 .subgroup .pin-summary{padding:0 10px 9px 10px}
@@ -158,7 +156,6 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .pin-chip.empty{background:transparent;color:var(--text-faint);font-weight:600;
   font-size:.68rem;padding:2px 0;letter-spacing:0}
 
-/* ---------- SUBGROUPS ---------- */
 .subgroup{background:#f8fafc;border:1px solid #e8edf3;border-radius:var(--r-md);
   margin:0 9px 7px;overflow:hidden;position:relative}
 .subgroup:last-child{margin-bottom:9px}
@@ -173,7 +170,6 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .subgroup .icon-btn{width:26px;height:26px}
 .subgroup .zoom-btn{padding:5px}
 
-/* ---------- EXPANDABLE PIN LIST ---------- */
 .pin-details{display:none;padding:0 10px 10px}
 .group.pins-open .pin-details,
 .subgroup.pins-open .pin-details{display:block}
@@ -204,7 +200,6 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .empty{text-align:center;padding:36px 20px;color:var(--text-faint);font-size:.82rem;line-height:1.6}
 .empty .big-ic{margin:0 auto 14px;width:56px;height:56px;color:#cbd5e1;display:grid;place-items:center}
 
-/* ---------- MAP ---------- */
 #mapWrap{flex:1;height:100%;min-width:0;position:relative;background:#e8eaed}
 #map{width:100%;height:100%}
 
@@ -460,8 +455,8 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
         </button>
       </div>
       <p id="traceHintText" style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.55">
-        • <b>Hilahin ang dilaw na dot</b> para itama ang posisyon<br>
-        • I-tap ang <b>Pan</b> para i-drag ang mapa
+        • <b>Drag the yellow dot</b> to adjust a point's position<br>
+        • Tap <b>Pan</b> to move the map
       </p>
     </div>
   </div>
@@ -626,11 +621,11 @@ let tempPinMarkers = [];
 let allRecords = [];
 let allTraces = [];
 let drawnOverlays = [];
-let pinMarkerObjects = [];        // { marker, item, pos }
+let pinMarkerObjects = [];
 let traceLabels = [];
 const featureIndex = new Map();
 let lastRecordCount = 0;
-let lastJumpMarker = null;        // pulsing highlight after jump
+let lastJumpMarker = null;
 
 let isEditing = false;
 let editingTraceItem = null;
@@ -1055,7 +1050,7 @@ function initMap(){
       setTimeout(() => {
         showConfirm({
           title: 'Resume unfinished trace?',
-          message: `May nakita kaming ${draft.points.length} unsaved points mula sa nakaraang session. Gusto mo bang ituloy?`,
+          message: `An unfinished trace with ${draft.points.length} unsaved point${draft.points.length === 1 ? '' : 's'} was found from your previous session. Would you like to resume?`,
           okText: 'Resume',
           cancelText: 'Discard'
         }).then(ok => {
@@ -1091,12 +1086,10 @@ function jumpToPin(pinId){
   const entry = pinMarkerObjects.find(e => String(e.item.id) === String(pinId));
   if (!entry){ toast("Pin location not found", "error"); return; }
 
-  // Pan + zoom
   map.panTo(entry.pos);
   const targetZoom = Math.max(17, map.getZoom());
   map.setZoom(targetZoom);
 
-  // Pulse highlight
   if (lastJumpMarker){
     lastJumpMarker.setMap(null);
     lastJumpMarker = null;
@@ -1117,7 +1110,6 @@ function jumpToPin(pinId){
     }
   });
 
-  // Fade out after 2.5 seconds
   setTimeout(() => {
     if (lastJumpMarker){
       lastJumpMarker.setMap(null);
@@ -1139,7 +1131,7 @@ function togglePanMode(){
   haptic(10);
 
   if (panMode){
-    toast("Pan mode — drag the map · tap Draw to resume", "info", 3000);
+    toast("Pan mode enabled — drag the map freely. Tap Draw to resume.", "info", 3000);
     showMapBadge("Pan mode — drag the map freely", isTracing);
   } else {
     toast("Drawing resumed", "success", 2000);
@@ -1222,7 +1214,7 @@ function addTempPin(latLng){
   }
   const containing = findTraceContaining(latLng);
   if (!containing){
-    toast(`Pins must be inside a traced area. (${allTraces.length} trace${allTraces.length>1?'s':''} loaded)`, "error", 3600);
+    toast(`Pins must be placed inside a traced area. (${allTraces.length} trace${allTraces.length>1?'s':''} loaded)`, "error", 3600);
     return;
   }
   const selectedType = selectedPinType();
@@ -1257,7 +1249,7 @@ async function cancelPinMode(){
   const n = currentTempPins.length;
   const ok = await showConfirm({
     title: n > 0 ? 'Discard unsaved pins?' : 'Cancel pin mode?',
-    message: n > 0 ? `${n} unsaved pin${n > 1 ? 's' : ''} will be thrown away.` : 'Nothing has been added yet.',
+    message: n > 0 ? `${n} unsaved pin${n > 1 ? 's' : ''} will be discarded.` : 'Nothing has been added yet.',
     okText: n > 0 ? 'Discard' : 'Yes, cancel',
     cancelText: 'Keep going'
   });
@@ -1283,7 +1275,7 @@ async function finishPinning(btn){
     else toast(`${n} pin(s) submitted — refreshing…`, "success");
     resetPinMode();
     const ok = await refreshUntil(expectedTotal);
-    toast(ok ? `Synced — ${n} new pin(s)` : "Saved, but list not updated. Tap Refresh.",
+    toast(ok ? `Synced — ${n} new pin(s)` : "Saved, but the list has not updated. Tap Refresh.",
           ok ? "success" : "error", 5000);
   });
 }
@@ -1313,7 +1305,7 @@ function startTracing(parentId, silent){
     : null;
 
   if (pendingParentId && (!pendingParentTrace || pendingParentTrace.coords.length < 3)){
-    toast("Parent must be a closed shape with 3+ points.", "error", 4000);
+    toast("Parent must be a closed shape with 3 or more points.", "error", 4000);
     pendingParentId = null; pendingParentTrace = null;
     return;
   }
@@ -1338,8 +1330,8 @@ function startTracing(parentId, silent){
     if (hint){
       hint.innerHTML =
         `• <b>Restricted area:</b> "${esc(pendingParentTrace.item.title)}"<br>` +
-        `• Ang bawat point ay dapat nasa <b>loob</b> ng parent<br>` +
-        `• I-tap ang <b>Pan</b> para i-drag ang mapa`;
+        `• All points must remain <b>inside</b> the parent area<br>` +
+        `• Tap <b>Pan</b> to move the map`;
     }
     showMapBadge(`Sub-trace inside "${pendingParentTrace.item.title}" — stay inside`, true);
     if (!silent) toast(`Drawing inside "${pendingParentTrace.item.title}"`, "info", 4200);
@@ -1347,8 +1339,8 @@ function startTracing(parentId, silent){
     const hint = document.getElementById('traceHintText');
     if (hint){
       hint.innerHTML =
-        `• <b>Hilahin ang dilaw na dot</b> para itama ang posisyon<br>` +
-        `• I-tap ang <b>Pan</b> para i-drag ang mapa`;
+        `• <b>Drag the yellow dot</b> to adjust a point's position<br>` +
+        `• Tap <b>Pan</b> to move the map`;
     }
     showMapBadge("Trace mode — tap the map to draw", true);
   }
@@ -1372,7 +1364,7 @@ async function cancelTracing(){
   const isSub = !!pendingParentTrace;
   const ok = await showConfirm({
     title: `Discard this ${isSub ? 'sub-trace' : 'trace'}?`,
-    message: n > 0 ? `${n} point${n > 1 ? 's' : ''} will be thrown away.` : 'Nothing has been drawn yet.',
+    message: n > 0 ? `${n} point${n > 1 ? 's' : ''} will be discarded.` : 'Nothing has been drawn yet.',
     okText: 'Discard', cancelText: 'Keep drawing'
   });
   if (!ok) return;
@@ -1422,7 +1414,7 @@ function createTraceMarker(latLng, index){
   marker.addListener("dragstart", () => lockMapForMarkerDrag());
   marker.addListener("dragend", (e) => {
     if (pendingParentTrace && !pointInRing_(e.latLng, pendingParentTrace.coords)){
-      toast(`Hindi pwedeng ilabas ang point sa "${pendingParentTrace.item.title}".`, "error", 3000);
+      toast(`Cannot move the point outside "${pendingParentTrace.item.title}".`, "error", 3000);
       marker.setPosition(currentTracePoints[index]);
       unlockMapAfterMarkerDrag();
       return;
@@ -1455,7 +1447,7 @@ function createTraceMarker(latLng, index){
 function addTracePoint(latLng, silent){
   if (pendingParentTrace){
     if (!pointInRing_(latLng, pendingParentTrace.coords)){
-      if (!silent) toast(`Nasa labas ng "${pendingParentTrace.item.title}" ang tap — kailangang nasa loob.`, "error", 3200);
+      if (!silent) toast(`Tap was outside "${pendingParentTrace.item.title}". Points must remain inside the parent area.`, "error", 3200);
       return;
     }
   }
@@ -1522,14 +1514,14 @@ async function finishTracing(btn){
       ), pendingParentTrace.coords)
     );
     if (offending){
-      toast(`May point sa labas ng "${pendingParentTrace.item.title}". Ayusin muna.`, "error", 4000);
+      toast(`One or more points are outside "${pendingParentTrace.item.title}". Please adjust them before saving.`, "error", 4000);
       return;
     }
   }
 
   const result = await showModal({
     title: isSub ? 'Name this sub-trace' : 'Name this traced area',
-    message: isSub ? `Nasa loob ng "${pendingParentTrace.item.title}".` : 'Give it a short, recognizable name.',
+    message: isSub ? `This sub-trace will be inside "${pendingParentTrace.item.title}".` : 'Give it a short, recognizable name.',
     input: isSub ? 'Sub-area' : 'Property Boundary',
     textarea: '',
     okText: 'Save', cancelText: 'Cancel'
@@ -1568,7 +1560,7 @@ async function finishTracing(btn){
     };
 
     if (traceRecord.coordinates.length > 49000){
-      toast(`Trace is too big (${pointsSnapshot.length} points).`, "error", 6000);
+      toast(`Trace is too large (${pointsSnapshot.length} points). Try fewer points.`, "error", 6000);
       isTracing = true;
       return;
     }
@@ -1586,7 +1578,7 @@ async function finishTracing(btn){
     resetTraceMode();
     clearDraft();
     const ok = await refreshUntil(expectedTotal);
-    toast(ok ? `Synced — "${title}" visible` : "Saved, but list not updated. Tap Refresh.",
+    toast(ok ? `Synced — "${title}" is now visible` : "Saved, but the list has not updated. Tap Refresh.",
           ok ? "success" : "error", 5000);
   });
 }
@@ -1616,7 +1608,7 @@ function startEditingTrace(itemId){
 
   const t = allTraces.find(x => String(x.item.id) === String(itemId));
   if (!t){ toast("Trace not found", "error"); return; }
-  if (t.coords.length < 3){ toast("Only shapes with 3+ points can be edited", "error"); return; }
+  if (t.coords.length < 3){ toast("Only shapes with 3 or more points can be edited", "error"); return; }
 
   isEditing = true;
   editingTraceItem = t.item;
@@ -1711,7 +1703,7 @@ function handleEdgeClick(latLng){
   editingCoords.splice(bestI + 1, 0, bestProjected);
   renderEditingShape();
   haptic(8);
-  toast(`Added point (${editingCoords.length} total)`, "success", 1600);
+  toast(`Point added (${editingCoords.length} total)`, "success", 1600);
 }
 async function removeEditingVertex(index){
   if (editingCoords.length <= 3){ toast("A shape needs at least 3 points", "error"); return; }
@@ -1723,10 +1715,10 @@ async function removeEditingVertex(index){
   editingCoords.splice(index, 1);
   renderEditingShape();
   haptic(10);
-  toast(`Removed point (${editingCoords.length} remaining)`, "info", 1600);
+  toast(`Point removed (${editingCoords.length} remaining)`, "info", 1600);
 }
 async function saveEditedTrace(btn){
-  if (editingCoords.length < 3){ toast("Need at least 3 points", "error"); return; }
+  if (editingCoords.length < 3){ toast("At least 3 points are required", "error"); return; }
   const nameInput = document.getElementById("editTraceNameInput");
   const notesInput = document.getElementById("editTraceNotesInput");
   const newTitle = (nameInput.value || "").trim();
@@ -1746,7 +1738,7 @@ async function saveEditedTrace(btn){
       coordinates: JSON.stringify({ points: editingCoords, color, closed: true })
     };
     if (updated.coordinates.length > 49000){
-      toast(`Shape is too big (${editingCoords.length} points).`, "error", 6000); return;
+      toast(`Shape is too large (${editingCoords.length} points).`, "error", 6000); return;
     }
     toast("Saving changes…");
     try {
@@ -1759,7 +1751,7 @@ async function saveEditedTrace(btn){
     }
     cancelEditingTrace();
     const ok = await refreshUntil(lastRecordCount, 4);
-    toast(ok ? "Synced — shape updated" : "Saved, but list not updated. Tap Refresh.",
+    toast(ok ? "Synced — shape updated" : "Saved, but the list has not updated. Tap Refresh.",
           ok ? "success" : "error", 5000);
   });
 }
@@ -2054,7 +2046,6 @@ function renderUnassignedGroup(unassignedPins){
 
 /* ============================================================ LIST CLICKS */
 document.getElementById('listContainer').addEventListener('click', (e) => {
-  // Delete pin — must come first to beat the goto handler
   const pinDelBtn = e.target.closest('.pin-del');
   if (pinDelBtn){
     e.stopPropagation();
@@ -2062,7 +2053,6 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
     return;
   }
 
-  // Show/hide pins
   const showPinsBtn = e.target.closest('[data-toggle-pins]');
   if (showPinsBtn){
     e.stopPropagation();
@@ -2076,7 +2066,6 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
     return;
   }
 
-  // Jump to pin on map
   const gotoPinRow = e.target.closest('[data-goto-pin]');
   if (gotoPinRow){
     e.stopPropagation();
@@ -2128,7 +2117,7 @@ async function deleteRecord(id, title, kind, btn){
   let message;
   if (kind === 'trace'){
     message = `Delete the trace "${title}"?`;
-    if (childCount > 0) message += `\n\nThis trace has ${childCount} sub-trace(s). They will become top-level.`;
+    if (childCount > 0) message += `\n\nThis trace has ${childCount} sub-trace(s). They will become top-level traces.`;
     message += `\n\nPins inside it will NOT be deleted.`;
   } else message = `Delete this pin?`;
 
