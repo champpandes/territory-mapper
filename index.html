@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Places & Traces</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Places &amp; Traces</title>
 <style>
 :root{
   --bg:#f5f7fa;--surface:#ffffff;--surface-2:#f2f4f8;--border:#e4e8ef;
@@ -14,16 +15,20 @@
   --sh-1:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.07);
   --sh-2:0 4px 14px rgba(16,24,40,.09);
   --sh-3:0 12px 32px rgba(16,24,40,.14);
+  --tap-min:44px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{display:flex;height:100vh;width:100vw;overflow:hidden;
+body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
+  overscroll-behavior:none}
 
-#sidebar{width:390px;flex-shrink:0;height:100vh;background:var(--surface);
+/* ---------------- SIDEBAR ---------------- */
+#sidebar{width:390px;flex-shrink:0;height:100vh;height:100dvh;background:var(--surface);
   border-right:1px solid var(--border);display:flex;flex-direction:column;
-  overflow-y:auto;overflow-x:hidden;z-index:20}
+  overflow-y:auto;overflow-x:hidden;z-index:20;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain}
 #sidebar::-webkit-scrollbar{width:9px}
 #sidebar::-webkit-scrollbar-thumb{background:#d5dbe4;border-radius:99px;border:2px solid var(--surface)}
 #sidebar::-webkit-scrollbar-thumb:hover{background:#c0c8d4}
@@ -43,11 +48,13 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
 .sec-head .count{background:var(--surface-2);color:var(--text-dim);
   font-size:.68rem;padding:2px 7px;border-radius:99px;letter-spacing:0}
 
+/* ---------------- BUTTONS ---------------- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
   width:100%;padding:11px 14px;border:none;border-radius:var(--r-md);
   font-family:inherit;font-size:.845rem;font-weight:600;letter-spacing:-.005em;
-  cursor:pointer;transition:background .16s,box-shadow .16s,transform .08s,color .16s;white-space:nowrap}
-.btn:active:not(:disabled){transform:scale(.985)}
+  cursor:pointer;transition:background .16s,box-shadow .16s,transform .08s,color .16s;
+  white-space:nowrap;min-height:var(--tap-min);touch-action:manipulation}
+.btn:active:not(:disabled){transform:scale(.975)}
 .btn:disabled{opacity:.55;cursor:wait}
 .btn:disabled:not([data-busy="1"]){cursor:not-allowed}
 .btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.28)}
@@ -59,44 +66,57 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
 .btn-amber{background:var(--amber-soft);color:var(--amber);border:1px solid #fed7aa}
 .btn-amber:hover:not(:disabled){background:#ffedd5}
 .btn-amber:disabled{background:var(--surface-2);color:var(--text-faint);border-color:var(--border)}
+.btn-danger{background:#fef2f2;color:var(--danger);border:1px solid #fecaca}
+.btn-danger:hover:not(:disabled){background:#fee2e2;border-color:#fca5a5}
+.btn-dark{background:#1e293b;color:#fff;border:1px solid #1e293b}
+.btn-dark:hover:not(:disabled){background:#0f172a}
 .btn-row{display:flex;gap:8px}
 
+/* ---------------- FIELDS ---------------- */
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
 .field label{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
-.field input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);
-  font-family:inherit;font-size:.85rem;font-weight:600;color:var(--text);background:var(--surface);
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
+  font-family:inherit;font-size:16px; /* 16px prevents iOS zoom */
+  font-weight:600;color:var(--text);background:var(--surface);
   transition:border-color .14s,box-shadow .14s;outline:none}
 .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
 
+/* ---------------- CHIPS ---------------- */
 .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:11px}
 .chip{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 4px;
   border-radius:var(--r-md);background:var(--surface);border:1.5px solid var(--border);
-  cursor:pointer;font-family:inherit;font-size:.7rem;font-weight:600;color:var(--text-dim);transition:all .16s}
+  cursor:pointer;font-family:inherit;font-size:.72rem;font-weight:600;color:var(--text-dim);
+  transition:all .16s;min-height:var(--tap-min);touch-action:manipulation}
 .chip:hover{border-color:#cbd5e1;background:var(--surface-2)}
-.chip .emoji{font-size:1.1rem;line-height:1}
+.chip .emoji{font-size:1.15rem;line-height:1}
 .chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-ring)}
 
+/* ---------------- MODE BAR ---------------- */
 .mode-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 11px;
   border-radius:var(--r-md);background:var(--accent-soft);border:1px solid #cfe0fd;animation:slideDown .2s ease}
 .mode-bar.amber{background:var(--amber-soft);border-color:#fed7aa}
 .mode-bar.blue{background:#eff6ff;border-color:#bfdbfe}
+.mode-bar.dark{background:#1e293b;border-color:#334155}
 .mode-bar .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;
   animation:pulse 1.4s ease-in-out infinite}
 .mode-bar.amber .dot{background:var(--amber)}
 .mode-bar.blue .dot{background:#2563eb}
-.mode-bar .txt{font-size:.75rem;font-weight:600;color:var(--accent);flex:1}
+.mode-bar.dark .dot{background:#94a3b8}
+.mode-bar .txt{font-size:.75rem;font-weight:600;color:var(--accent);flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mode-bar.amber .txt{color:var(--amber)}
 .mode-bar.blue .txt{color:#1d4ed8}
+.mode-bar.dark .txt{color:#e2e8f0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 
+/* ---------------- GROUPS ---------------- */
 .group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
   overflow:hidden;margin-bottom:9px;box-shadow:var(--sh-1);transition:box-shadow .18s}
-.group:hover{box-shadow:var(--sh-2)}
 .group.editing{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18), var(--sh-1)}
-.group-head{display:flex;align-items:center;gap:9px;padding:11px 12px;cursor:pointer;
-  user-select:none;transition:background .14s}
+.group-head{display:flex;align-items:center;gap:7px;padding:11px 12px;cursor:pointer;
+  user-select:none;transition:background .14s;-webkit-user-select:none}
 .group-head:hover{background:var(--surface-2)}
 .caret{font-size:.6rem;color:var(--text-faint);flex-shrink:0;transition:transform .2s ease;
   width:9px;text-align:center}
@@ -104,20 +124,42 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
 .swatch{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .group-title{font-size:.83rem;font-weight:650;flex:1;min-width:0;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.005em}
+.count-pill{font-size:.62rem;color:var(--text-faint);background:var(--surface-2);
+  padding:2px 6px;border-radius:99px;flex-shrink:0}
 .zoom-btn{font-size:.68rem;font-weight:600;color:var(--accent);background:transparent;
-  border:none;padding:4px 7px;border-radius:var(--r-sm);cursor:pointer;font-family:inherit;
-  flex-shrink:0;transition:background .14s}
+  border:none;padding:8px 8px;border-radius:var(--r-sm);cursor:pointer;font-family:inherit;
+  flex-shrink:0;transition:background .14s;min-height:32px;min-width:32px;touch-action:manipulation}
 .zoom-btn:hover{background:var(--accent-soft)}
-.del-btn{background:var(--surface);border:1px solid var(--border);width:28px;height:28px;
+.icon-btn{background:var(--surface);border:1px solid var(--border);width:34px;height:34px;
   border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.72rem;
-  flex-shrink:0;transition:all .14s;font-family:inherit}
-.del-btn:hover:not(:disabled){background:var(--danger);border-color:var(--danger);color:#fff}
-.del-btn:disabled{opacity:.6;cursor:wait}
-.group-head .del-btn{width:26px;height:26px;font-size:.68rem}
+  flex-shrink:0;transition:all .14s;font-family:inherit;padding:0;touch-action:manipulation}
+.icon-btn:hover:not(:disabled){background:var(--surface-2)}
+.icon-btn.edit:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
+.icon-btn.del:hover:not(:disabled){background:var(--danger);border-color:var(--danger);color:#fff}
+.icon-btn.sub{border-color:#bbf7d0;color:var(--green);font-weight:800}
+.icon-btn.sub:hover:not(:disabled){background:#dcfce7}
+.icon-btn:disabled{opacity:.5;cursor:wait}
+
 .group-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1)}
 .group.open .group-body{grid-template-rows:1fr}
 .group-body > .inner{overflow:hidden}
+
+.subgroup{background:#f8fafc;border:1px solid #e8edf3;border-radius:var(--r-md);
+  margin:0 9px 7px;overflow:hidden}
+.subgroup.editing{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.14)}
+.subgroup-head{display:flex;align-items:center;gap:7px;padding:8px 10px;cursor:pointer;
+  user-select:none;transition:background .14s;font-size:.78rem;-webkit-user-select:none}
+.subgroup-head:hover{background:#eef2f7}
+.subgroup .caret{font-size:.55rem}
+.subgroup-title{font-weight:600;flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.subgroup .swatch{width:9px;height:9px}
+.subgroup-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s cubic-bezier(.4,0,.2,1)}
+.subgroup.open .subgroup-body{grid-template-rows:1fr}
+.subgroup-body > .inner{overflow:hidden}
+
 .pin-list{display:flex;flex-direction:column;gap:5px;padding:4px 9px 10px}
+.subgroup .pin-list{padding:0 7px 8px}
 .record{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r-md);
   background:var(--surface-2);cursor:pointer;transition:background .14s}
 .record:hover{background:var(--accent-soft)}
@@ -127,51 +169,121 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 .rec-type{font-size:.66rem;color:var(--text-faint);text-transform:uppercase;
   letter-spacing:.05em;margin-top:2px}
-.edit-btn{background:var(--surface);border:1px solid var(--border);width:28px;height:28px;
-  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.72rem;
-  flex-shrink:0;transition:all .14s;font-family:inherit}
+.edit-btn{background:var(--surface);border:1px solid var(--border);width:34px;height:34px;
+  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.75rem;
+  flex-shrink:0;transition:all .14s;font-family:inherit;touch-action:manipulation}
 .edit-btn:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
 .edit-btn:disabled{opacity:.6;cursor:wait}
-.group-head .edit-btn{width:26px;height:26px;font-size:.68rem}
+.del-btn{background:var(--surface);border:1px solid var(--border);width:34px;height:34px;
+  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.75rem;
+  flex-shrink:0;transition:all .14s;font-family:inherit;touch-action:manipulation}
+.del-btn:hover:not(:disabled){background:var(--danger);border-color:var(--danger);color:#fff}
+.del-btn:disabled{opacity:.6;cursor:wait}
+
+.hint-empty{font-size:.72rem;color:var(--text-faint);padding:8px 12px;text-align:center}
 
 .empty{text-align:center;padding:28px 16px;color:var(--text-faint);font-size:.8rem;line-height:1.6}
 .empty .big{font-size:1.8rem;display:block;margin-bottom:8px;opacity:.5}
 
+/* ---------------- MAP ---------------- */
 #mapWrap{flex:1;height:100%;min-width:0;position:relative;background:#e8eaed}
 #map{width:100%;height:100%}
 
 .map-badge{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;
   align-items:center;gap:8px;background:rgba(21,26,33,.92);backdrop-filter:blur(8px);color:#fff;
   padding:8px 15px;border-radius:99px;font-size:.76rem;font-weight:600;letter-spacing:-.005em;
-  box-shadow:var(--sh-3);z-index:1000;pointer-events:none;animation:slideDown .22s ease;white-space:nowrap}
+  box-shadow:var(--sh-3);z-index:1000;pointer-events:none;animation:slideDown .22s ease;
+  white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
 .map-badge .dot{width:7px;height:7px;border-radius:50%;background:#60a5fa;flex-shrink:0;
   animation:pulse 1.4s ease-in-out infinite}
 .map-badge.amber .dot{background:#fbbf24}
 .map-badge.blue .dot{background:#2563eb}
+.map-badge.dark{background:rgba(30,41,59,.95)}
+.map-badge.dark .dot{background:#fde68a}
 .map-badge[hidden]{display:none}
 
+#panFab{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;
+  background:rgba(21,26,33,.95);backdrop-filter:blur(10px);color:#fff;
+  padding:12px 20px;border-radius:99px;border:none;cursor:pointer;
+  font-family:inherit;font-size:.85rem;font-weight:700;letter-spacing:-.005em;
+  box-shadow:var(--sh-3);z-index:1000;transition:all .16s;white-space:nowrap;
+  min-height:var(--tap-min);touch-action:manipulation}
+#panFab:hover{background:#0f172a}
+#panFab.active{background:#f59e0b;color:#1c1917;box-shadow:0 4px 18px rgba(245,158,11,.5)}
+#panFab.active:hover{background:#d97706}
+#panFab[hidden]{display:none}
+
+/* ---------------- TOASTS ---------------- */
 #toasts{position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;
-  flex-direction:column;align-items:center;gap:8px;z-index:2000;pointer-events:none}
+  flex-direction:column;align-items:center;gap:8px;z-index:2000;pointer-events:none;
+  max-width:calc(100vw - 24px)}
 .toast{background:rgba(21,26,33,.95);backdrop-filter:blur(10px);color:#fff;padding:10px 18px;
   border-radius:99px;font-size:.8rem;font-weight:600;letter-spacing:-.005em;box-shadow:var(--sh-3);
   animation:toastIn .26s cubic-bezier(.34,1.4,.64,1);display:flex;align-items:center;gap:8px;
-  max-width:88vw;word-break:break-word}
+  max-width:100%;word-break:break-word}
 .toast.success{background:rgba(21,128,61,.96)}
 .toast.error{background:rgba(185,28,28,.96)}
 .toast.out{animation:toastOut .22s ease forwards}
 @keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes toastOut{to{opacity:0;transform:translateY(-10px) scale(.96)}}
 
+/* ---------------- MODAL ---------------- */
+.modal-root{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;
+  padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.modal-root[hidden]{display:none}
+.modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);
+  animation:fadeIn .18s ease}
+.modal-card{position:relative;background:var(--surface);border-radius:18px;padding:22px;
+  width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.35);
+  animation:modalIn .24s cubic-bezier(.34,1.4,.64,1);max-height:calc(100vh - 40px);
+  max-height:calc(100dvh - 40px);overflow-y:auto}
+.modal-title{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;color:var(--text);
+  margin-bottom:10px}
+.modal-msg{font-size:.86rem;color:var(--text-dim);line-height:1.55;margin-bottom:16px;
+  white-space:pre-line}
+.modal-input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
+  font-family:inherit;font-size:16px;font-weight:600;color:var(--text);background:var(--surface);
+  outline:none;margin-bottom:16px;transition:border-color .14s,box-shadow .14s}
+.modal-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+.modal-actions{display:flex;gap:10px}
+.modal-actions .btn{flex:1}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
+
+/* ---------------- MOBILE ---------------- */
 @media (max-width:768px){
   body{flex-direction:column}
-  #mapWrap{width:100%;height:52vh;flex:none;order:1}
-  #sidebar{width:100%;height:48vh;order:2;border-right:none;
-    border-top:1px solid var(--border);border-radius:18px 18px 0 0;margin-top:-18px;
-    box-shadow:0 -4px 20px rgba(16,24,40,.1);position:relative;z-index:20}
-  .brand{padding:14px 16px 12px}
+  #mapWrap{width:100%;height:55vh;height:55dvh;flex:none;order:1}
+  #sidebar{
+    width:100%;height:45vh;height:45dvh;order:2;
+    border-right:none;border-top:1px solid var(--border);
+    border-radius:20px 20px 0 0;margin-top:-20px;
+    box-shadow:0 -4px 20px rgba(16,24,40,.14);
+    position:relative;z-index:20;
+    padding-bottom:env(safe-area-inset-bottom)
+  }
+  /* Drag handle visual */
+  #sidebar::before{
+    content:"";display:block;width:44px;height:5px;border-radius:99px;
+    background:#cbd5e1;margin:8px auto 0;flex-shrink:0;
+  }
+  .brand{padding:6px 16px 12px}
+  .brand-icon{width:34px;height:34px;font-size:17px}
   .section{padding:14px 16px}
   .map-badge{top:12px;font-size:.72rem;padding:7px 13px}
-  #toasts{top:12px}
+  #panFab{bottom:calc(24px + env(safe-area-inset-bottom));padding:13px 22px;font-size:.88rem}
+  #toasts{top:calc(12px + env(safe-area-inset-top))}
+  .modal-card{margin-bottom:auto;margin-top:auto}
+  /* Larger group-header hit targets */
+  .group-head{padding:13px 12px}
+  .subgroup-head{padding:10px 10px}
+}
+
+@media (max-width:480px){
+  .brand p{display:none}
+  .btn-row{gap:6px}
+  .modal-card{padding:18px;border-radius:16px}
 }
 </style>
 </head>
@@ -197,7 +309,6 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
     </div>
   </div>
 
-  <!-- EDIT TRACE PANEL -->
   <div class="section" id="editPanel" hidden>
     <div class="sec-head"><span>Editing shape</span></div>
 
@@ -208,14 +319,8 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
 
     <div class="mode-bar blue">
       <span class="dot"></span>
-      <span class="txt" id="editHintText">Drag dots · click edge to add · right-click dot to remove</span>
+      <span class="txt" id="editHintText">Drag dots · tap edge to add · long-press dot to remove</span>
     </div>
-
-    <p style="font-size:.7rem;color:var(--text-faint);margin-top:10px;line-height:1.6">
-      • Drag any <b>orange dot</b> to move a vertex<br>
-      • Click on the shape's <b>blue edge</b> to add a point<br>
-      • <b>Right-click</b> an orange dot to remove it
-    </p>
 
     <div class="btn-row" style="margin-top:10px">
       <button class="btn btn-ghost" onclick="cancelEditingTrace()">Cancel</button>
@@ -240,12 +345,13 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
       </div>
       <div class="btn-row" style="margin-top:8px">
         <button class="btn btn-amber" onclick="undoLastPin()">↩ Undo</button>
-        <button class="btn btn-green" id="savePinsBtn" onclick="finishPinning(this)">💾 Save</button>
+        <button class="btn btn-amber" id="panBtnPin" onclick="togglePanMode()">✋ Pan</button>
+        <button class="btn btn-danger" onclick="cancelPinMode()">✕ Cancel</button>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-green" id="savePinsBtn" onclick="finishPinning(this)">💾 Save pins</button>
       </div>
     </div>
-    <p style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.5">
-      Pins can only be placed <b>inside a traced area</b>. Draw a trace first if you don't have one.
-    </p>
   </div>
 
   <div class="section">
@@ -260,8 +366,16 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
       </div>
       <div class="btn-row" style="margin-top:8px">
         <button class="btn btn-amber" onclick="undoLastTracePoint()">↩ Undo</button>
-        <button class="btn btn-green" id="saveTraceBtn" onclick="finishTracing(this)">💾 Save</button>
+        <button class="btn btn-amber" id="panBtnTrace" onclick="togglePanMode()">✋ Pan</button>
+        <button class="btn btn-danger" onclick="cancelTracing()">✕ Cancel</button>
       </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-green" id="saveTraceBtn" onclick="finishTracing(this)">💾 Save trace</button>
+      </div>
+      <p style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.55">
+        • <b>Hilahin ang dilaw na dot</b> para itama ang posisyon<br>
+        • I-tap ang <b>✋ Pan</b> para i-drag ang mapa
+      </p>
     </div>
   </div>
 
@@ -281,6 +395,24 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
   <div id="mapBadge" class="map-badge" hidden>
     <span class="dot"></span><span id="mapBadgeText"></span>
   </div>
+  <button id="panFab" hidden onclick="togglePanMode()">
+    <span id="panFabIcon">✋</span>
+    <span id="panFabText">Pan map</span>
+  </button>
+</div>
+
+<!-- Modal root -->
+<div id="modalRoot" class="modal-root" hidden>
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <h3 class="modal-title" id="modalTitle"></h3>
+    <p class="modal-msg" id="modalMsg"></p>
+    <input class="modal-input" id="modalInput" type="text" hidden autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalOk">OK</button>
+    </div>
+  </div>
 </div>
 
 <div id="toasts"></div>
@@ -292,6 +424,16 @@ body{display:flex;height:100vh;width:100vw;overflow:hidden;
 /* ============================================================ CONFIG */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD9x7ztrDySel0ERqDRS558dRZVVXsGMJS37c2pBOYC3DolP96R9F2M3LfpJXycW9rlA/exec";
 const TRACE_RADIUS_METERS = 300;
+
+/* ----- Touch detection ----- */
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const IS_MOBILE_WIDTH = () => window.matchMedia('(max-width: 768px)').matches;
+/* Bigger dots on touch devices */
+const POINT_SCALE     = IS_TOUCH ? 11 : 7;
+const VERTEX_SCALE    = IS_TOUCH ? 12 : 8;
+/* Ghost tap threshold */
+const DRAG_THRESHOLD_PX = 12;
+
 const MAP_STYLE = [
   {elementType:"geometry",stylers:[{color:"#f5f7fa"}]},
   {elementType:"labels.icon",stylers:[{visibility:"off"}]},
@@ -311,6 +453,7 @@ const MAP_STYLE = [
 let map;
 let userLocation = { lat: 13.5571, lng: 123.3650 };
 let isTracing = false;
+let pendingParentId = null;
 let currentTracePoints = [];
 let activePolyline = null;
 let activePolygon = null;
@@ -324,13 +467,97 @@ let drawnOverlays = [];
 const featureIndex = new Map();
 let lastRecordCount = 0;
 
-/* ---- shape-editing state ---- */
 let isEditing = false;
 let editingTraceItem = null;
 let editingCoords = [];
 let editingMarkers = [];
 let editingPolyline = null;
 let editingFill = null;
+
+let panMode = false;
+let markerInteractionLock = false;   // set while dragging a marker
+
+/* ============================================================ MODAL SYSTEM */
+let modalResolve = null;
+
+function showModal({title = '', message = '', input = null, okText = 'OK', cancelText = 'Cancel'}){
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    const root  = document.getElementById('modalRoot');
+    const tEl   = document.getElementById('modalTitle');
+    const mEl   = document.getElementById('modalMsg');
+    const iEl   = document.getElementById('modalInput');
+    const okBtn = document.getElementById('modalOk');
+    const caBtn = document.getElementById('modalCancel');
+
+    tEl.textContent = title;
+    tEl.hidden = !title;
+
+    mEl.textContent = message || '';
+    mEl.hidden = !message;
+
+    okBtn.textContent = okText;
+    caBtn.textContent = cancelText;
+
+    if (input !== null){
+      iEl.hidden = false;
+      iEl.value = input ?? '';
+      iEl.placeholder = '';
+    } else {
+      iEl.hidden = true;
+      iEl.value = '';
+    }
+
+    root.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    const cleanup = () => {
+      root.hidden = true;
+      document.body.style.overflow = '';
+      okBtn.onclick = null;
+      caBtn.onclick = null;
+      document.getElementById('modalBackdrop').onclick = null;
+      iEl.onkeydown = null;
+      modalResolve = null;
+    };
+
+    const confirm = () => {
+      const v = input !== null ? iEl.value : true;
+      cleanup();
+      resolve(v);
+    };
+    const cancel = () => { cleanup(); resolve(null); };
+
+    okBtn.onclick = confirm;
+    caBtn.onclick = cancel;
+    document.getElementById('modalBackdrop').onclick = cancel;
+
+    if (input !== null){
+      iEl.onkeydown = (e) => {
+        if (e.key === 'Enter'){ e.preventDefault(); confirm(); }
+        if (e.key === 'Escape'){ e.preventDefault(); cancel(); }
+      };
+      // Focus & bring into view (handles mobile keyboard)
+      setTimeout(() => {
+        iEl.focus();
+        iEl.select?.();
+        // Ensure the modal card is visible after the keyboard slides up
+        const card = iEl.closest('.modal-card');
+        if (card) card.scrollIntoView({ block: 'center' });
+      }, 60);
+    } else {
+      // Focus the OK button for keyboard users
+      setTimeout(() => okBtn.focus(), 60);
+    }
+  });
+}
+
+function showPrompt({title = '', message = '', defaultValue = '', okText = 'OK', cancelText = 'Cancel'}){
+  return showModal({ title, message, input: defaultValue, okText, cancelText });
+}
+function showConfirm({title = '', message = '', okText = 'OK', cancelText = 'Cancel'}){
+  return showModal({ title, message, input: null, okText, cancelText }).then(v => v !== null);
+}
 
 /* ============================================================ BUTTON BUSY HELPER */
 async function withButtonBusy(btn, busyText, fn){
@@ -340,9 +567,8 @@ async function withButtonBusy(btn, busyText, fn){
   btn.dataset.busy = '1';
   btn.disabled = true;
   btn.innerHTML = busyText;
-  try {
-    return await fn();
-  } finally {
+  try { return await fn(); }
+  finally {
     btn.dataset.busy = '';
     btn.disabled = false;
     btn.innerHTML = originalHTML;
@@ -423,9 +649,25 @@ function projectPointOnSegment(p, a, b){
   let t = len2 === 0 ? 0 : ((px-ax)*dx + (py-ay)*dy) / len2;
   t = Math.max(0, Math.min(1, t));
   const x = ax + t*dx, y = ay + t*dy;
-  const lat = y / R * 180 / Math.PI;
-  const lng = x / (R * Math.cos(latRef)) * 180 / Math.PI;
-  return { lat, lng };
+  return {
+    lat: y / R * 180 / Math.PI,
+    lng: x / (R * Math.cos(latRef)) * 180 / Math.PI
+  };
+}
+
+/* ============================================================ LONG-PRESS ATTACH */
+function attachLongPress(marker, onLongPress, duration = 550){
+  let timer = null;
+  const start = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => { timer = null; onLongPress(); }, duration);
+  };
+  const cancel = () => { if (timer){ clearTimeout(timer); timer = null; } };
+
+  ['mousedown','touchstart'].forEach(ev => google.maps.event.addListener(marker, ev, start));
+  ['mouseup','touchend','mouseout','dragstart','drag','dragend'].forEach(ev =>
+    google.maps.event.addListener(marker, ev, cancel)
+  );
 }
 
 /* ============================================================ RAY-CASTING */
@@ -451,16 +693,20 @@ function pointInRing_(latLng, coords){
 }
 
 /* ============================================================ TRACE MEMBERSHIP */
+function traceContains_(t, latLng){
+  if (t.coords.length >= 3) return pointInRing_(latLng, t.coords);
+  if (t.coords.length >= 1){
+    const d = distanceToPathMeters({ lat: latLng.lat(), lng: latLng.lng() }, t.coords);
+    return d <= TRACE_RADIUS_METERS;
+  }
+  return false;
+}
 function findTraceContaining(latLng){
   for (const t of allTraces){
-    if (t.coords.length >= 3){
-      if (pointInRing_(latLng, t.coords)) return t;
-    } else if (t.coords.length >= 1){
-      const d = distanceToPathMeters(
-        { lat: latLng.lat(), lng: latLng.lng() }, t.coords
-      );
-      if (d <= TRACE_RADIUS_METERS) return t;
-    }
+    if (t.parentId && traceContains_(t, latLng)) return t;
+  }
+  for (const t of allTraces){
+    if (!t.parentId && traceContains_(t, latLng)) return t;
   }
   return null;
 }
@@ -508,10 +754,48 @@ async function refreshUntil(expectedAtLeast, maxAttempts = 6){
     clearOverlays();
     const count = await fetchPlacesFromSheet();
     console.log(`[refresh] attempt ${attempt} → ${count} records (target: ${expectedAtLeast})`);
-    if (typeof count === 'number' && count >= expectedAtLeast){
-      return true;
-    }
+    if (typeof count === 'number' && count >= expectedAtLeast) return true;
   }
+  return false;
+}
+
+/* ============================================================
+   GHOST-TAP SUPPRESSION
+   ------------------------------------------------------------
+   Track touchstart/mousedown position. If the user moved more
+   than DRAG_THRESHOLD_PX before the click, suppress the click.
+   This is far more reliable than relying on dragstart/dragend,
+   especially on mobile where synthetic clicks can lag behind.
+   ============================================================ */
+let pointerStart = null;
+
+function installPointerTracking(){
+  const mapEl = document.getElementById('map');
+  const down = (x, y) => { pointerStart = { x, y, t: Date.now() }; };
+  const move = (x, y) => {
+    if (!pointerStart) return;
+    if (Math.hypot(x - pointerStart.x, y - pointerStart.y) > DRAG_THRESHOLD_PX){
+      pointerStart.moved = true;
+    }
+  };
+  const up = () => { /* handled in click */ };
+
+  mapEl.addEventListener('touchstart', e => {
+    const t = e.touches[0]; if (t) down(t.clientX, t.clientY);
+  }, { passive: true });
+  mapEl.addEventListener('touchmove', e => {
+    const t = e.touches[0]; if (t) move(t.clientX, t.clientY);
+  }, { passive: true });
+
+  mapEl.addEventListener('mousedown', e => down(e.clientX, e.clientY));
+  mapEl.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+}
+
+function shouldIgnoreMapClick(){
+  if (markerInteractionLock) return true;
+  if (!pointerStart) return false;
+  if (pointerStart.moved) return true;
+  // Very quick taps are fine; slow taps (>600ms) that didn't move are probably fine too
   return false;
 }
 
@@ -521,10 +805,18 @@ function initMap(){
     center: userLocation, zoom: 14, styles: MAP_STYLE,
     mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
     zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
-    clickableIcons: false
+    clickableIcons: false,
+    gestureHandling: "greedy",
+    draggable: true
   });
 
+  installPointerTracking();
+
   map.addListener("click", (e) => {
+    const ignore = shouldIgnoreMapClick();
+    pointerStart = null;
+    if (ignore) return;
+    if (panMode) return;
     if (isTracing) addTracePoint(e.latLng);
     else if (isPinning) addTempPin(e.latLng);
   });
@@ -551,6 +843,86 @@ function initMap(){
   fetchPlacesFromSheet();
 }
 
+/* Lock the map while dragging a marker */
+function lockMapForMarkerDrag(){
+  markerInteractionLock = true;
+  map.setOptions({ draggable: false, gestureHandling: 'none' });
+}
+function unlockMapAfterMarkerDrag(){
+  // Short delay so the click that ends the drag doesn't add a point
+  setTimeout(() => {
+    markerInteractionLock = false;
+    map.setOptions({ draggable: true, gestureHandling: 'greedy' });
+  }, 180);
+}
+
+/* ============================================================ PAN MODE */
+function togglePanMode(){
+  if (!isTracing && !isPinning){
+    toast("Start trace or pin mode first to use pan mode", "info", 2400);
+    return;
+  }
+  panMode = !panMode;
+  updatePanUI();
+  applyMarkerDraggability();
+
+  if (panMode){
+    toast("✋ Pan mode — drag the map · tap Draw to resume", "info", 3000);
+    showMapBadge("✋ Pan mode — drag the map freely", isTracing);
+  } else {
+    toast("✏️ Drawing resumed", "success", 2000);
+    updateMapBadgeForCurrentMode();
+  }
+}
+
+function applyMarkerDraggability(){
+  const shouldBeDraggable = isTracing && !panMode;
+  tempMarkers.forEach(m => m.setDraggable(shouldBeDraggable));
+}
+
+function updatePanUI(){
+  const inMode = isTracing || isPinning;
+
+  const fab = document.getElementById('panFab');
+  const fabIcon = document.getElementById('panFabIcon');
+  const fabText = document.getElementById('panFabText');
+  fab.hidden = !inMode;
+  if (inMode){
+    fab.classList.toggle('active', panMode);
+    fabIcon.textContent = panMode ? "✏️" : "✋";
+    fabText.textContent = panMode ? "Draw" : "Pan map";
+  }
+
+  const btnTrace = document.getElementById('panBtnTrace');
+  const btnPin   = document.getElementById('panBtnPin');
+  [btnTrace, btnPin].forEach(b => {
+    if (!b) return;
+    b.classList.toggle('btn-dark', panMode);
+    b.classList.toggle('btn-amber', !panMode);
+    b.textContent = panMode ? "✏️ Draw" : "✋ Pan";
+  });
+
+  const traceBar = document.querySelector('#traceActiveControls .mode-bar');
+  const pinBar   = document.querySelector('#pinActiveControls .mode-bar');
+  if (traceBar) traceBar.classList.toggle('dark', panMode);
+  if (pinBar)   pinBar.classList.toggle('dark', panMode);
+
+  if (isTracing) updateTraceControls();
+}
+
+function updateMapBadgeForCurrentMode(){
+  if (isTracing){
+    if (pendingParentId){
+      const p = allTraces.find(t => String(t.item.id) === pendingParentId);
+      showMapBadge(`Sub-trace of "${p ? p.item.title : '?'}" — tap the map`, true);
+    } else {
+      showMapBadge("Trace mode — tap the map to draw", true);
+    }
+  } else if (isPinning){
+    showMapBadge("Pin mode — tap inside a traced area");
+  }
+}
+
 /* ============================================================ PIN CHIPS */
 document.getElementById('pinTypeChips').addEventListener('click', (e) => {
   const chip = e.target.closest('.chip');
@@ -568,21 +940,20 @@ function togglePinMode(){
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
   if (isTracing){ toast("Finish or cancel your current trace first", "error"); return; }
   if (allTraces.length === 0){
-    toast("No traced areas yet — draw a trace first.", "error", 4000);
-    return;
+    toast("No traced areas yet — draw a trace first.", "error", 4000); return;
   }
-
   isPinning = true; currentTempPins = [];
+  panMode = false;
   document.getElementById("pinModeBtn").hidden = true;
   document.getElementById("traceBtn").disabled = true;
   document.getElementById("pinActiveControls").hidden = false;
+  updatePanUI();
   showMapBadge("Pin mode — tap inside a traced area");
 }
 
 function addTempPin(latLng){
   if (allTraces.length === 0){
-    toast("No traces loaded yet — try refreshing.", "error", 3200);
-    return;
+    toast("No traces loaded yet — try refreshing.", "error", 3200); return;
   }
   const containing = findTraceContaining(latLng);
   if (!containing){
@@ -593,7 +964,7 @@ function addTempPin(latLng){
   currentTempPins.push({
     id: Date.now().toString() + Math.random(),
     latitude: latLng.lat(), longitude: latLng.lng(),
-    title: selectedType, type: selectedType, coordinates: null
+    title: selectedType, type: selectedType, coordinates: null, parentId: ""
   });
   const marker = new google.maps.Marker({
     position: latLng, map, title: selectedType,
@@ -617,91 +988,246 @@ function undoLastPin(){
     : 'Tap inside a traced area to drop a pin';
 }
 
+async function cancelPinMode(){
+  if (!isPinning && !currentTempPins.length) return;
+  const n = currentTempPins.length;
+
+  const ok = await showConfirm({
+    title: n > 0 ? 'Discard unsaved pins?' : 'Cancel pin mode?',
+    message: n > 0
+      ? `${n} unsaved pin${n > 1 ? 's' : ''} will be thrown away.`
+      : 'Nothing has been added yet.',
+    okText: n > 0 ? 'Discard' : 'Yes, cancel',
+    cancelText: 'Keep going'
+  });
+  if (!ok) return;
+
+  resetPinMode();
+  toast(n > 0 ? `Discarded ${n} pin(s)` : "Pin mode cancelled", "info", 2200);
+}
+
 async function finishPinning(btn){
   if (!currentTempPins.length){ toast("Drop at least one pin first", "error"); return; }
-
   await withButtonBusy(btn, "⏳ Saving…", async () => {
     const pins = currentTempPins.slice();
     isPinning = false;
-
     const n = pins.length;
     const expectedTotal = lastRecordCount + n;
-
     toast(`Saving ${n} pin(s)…`);
     let failed = 0;
     for (const pin of pins){
       try { await submitToSheet(pin); }
-      catch(e){ console.error("Network error saving pin:", pin, e); failed++; }
+      catch(e){ console.error("Network error:", pin, e); failed++; }
     }
-    if (failed > 0){
-      toast(`${failed} of ${n} failed to send (network).`, "error", 5000);
-    } else {
-      toast(`${n} pin(s) submitted — refreshing…`, "success");
-    }
+    if (failed > 0) toast(`${failed} of ${n} failed to send.`, "error", 5000);
+    else toast(`${n} pin(s) submitted — refreshing…`, "success");
     resetPinMode();
-
     const ok = await refreshUntil(expectedTotal);
-    if (ok){
-      toast(`Synced — ${n} new pin(s) visible`, "success");
-    } else {
-      toast("Saved, but the list hasn't updated yet. Tap 🔄 Refresh.", "error", 6000);
-    }
+    toast(ok ? `Synced — ${n} new pin(s)` : "Saved, but list not updated. Tap 🔄 Refresh.",
+          ok ? "success" : "error", 5000);
   });
 }
 
 function resetPinMode(){
   isPinning = false; currentTempPins = [];
+  panMode = false;
   tempPinMarkers.forEach(m => m.setMap(null));
   tempPinMarkers = [];
   document.getElementById("pinModeBtn").hidden = false;
   document.getElementById("traceBtn").disabled = false;
   document.getElementById("pinActiveControls").hidden = true;
+  document.getElementById("panFab").hidden = true;
   hideMapBadge();
 }
 
 /* ============================================================ TRACE MODE */
 function toggleTracing(){
+  startTracing(null);
+}
+
+function startTracing(parentId){
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-  if (isPinning){ toast("Finish or cancel your current pinning session first", "error"); return; }
-  isTracing = true; currentTracePoints = [];
+  if (isPinning){ toast("Finish pinning session first", "error"); return; }
+  if (isTracing) return;
+
+  pendingParentId = parentId ? String(parentId) : null;
+  isTracing = true;
+  panMode = false;
+  currentTracePoints = [];
+
   document.getElementById("traceBtn").hidden = true;
   document.getElementById("pinModeBtn").disabled = true;
   document.getElementById("traceActiveControls").hidden = false;
-  renderActiveTrace(); updateTraceControls();
-  showMapBadge("Trace mode — tap the map to draw", true);
+
+  renderActiveTrace();
+  updateTraceControls();
+  updatePanUI();
+
+  if (pendingParentId){
+    const p = allTraces.find(t => String(t.item.id) === pendingParentId);
+    showMapBadge(`Sub-trace of "${p ? p.item.title : '?'}" — tap the map`, true);
+    toast(`Drawing sub-trace inside "${p ? p.item.title : '?'}"`, "info", 3200);
+  } else {
+    showMapBadge("Trace mode — tap the map to draw", true);
+  }
 }
+
+async function cancelTracing(){
+  if (!isTracing) return;
+
+  const n = currentTracePoints.length;
+  const isSub = !!pendingParentId;
+
+  const ok = await showConfirm({
+    title: `Discard this ${isSub ? 'sub-trace' : 'trace'}?`,
+    message: n > 0
+      ? `${n} point${n > 1 ? 's' : ''} will be thrown away.`
+      : 'Nothing has been drawn yet.',
+    okText: 'Discard',
+    cancelText: 'Keep drawing'
+  });
+  if (!ok) return;
+
+  const parentTitle = isSub
+    ? (allTraces.find(t => String(t.item.id) === pendingParentId) || {item:{title:'?'}}).item.title
+    : null;
+
+  resetTraceMode();
+  toast(parentTitle
+        ? `Sub-trace of "${parentTitle}" cancelled`
+        : "Trace cancelled", "info", 2200);
+}
+
 function renderActiveTrace(){
   if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
   if (activePolygon){ activePolygon.setMap(null); activePolygon = null; }
   if (currentTracePoints.length < 2) return;
+
+  const stroke = pendingParentId ? "#1d4ed8" : "#d97706";
+
   if (currentTracePoints.length >= 3){
     activePolygon = new google.maps.Polygon({
       paths: currentTracePoints, geodesic: true,
-      strokeColor: "#d97706", strokeOpacity: 0.95, strokeWeight: 4,
-      fillColor: "#d97706", fillOpacity: 0.18,
+      strokeColor: stroke, strokeOpacity: 0.95, strokeWeight: 4,
+      fillColor: stroke, fillOpacity: 0.18,
       clickable: false, map
     });
   } else {
     activePolyline = new google.maps.Polyline({
       path: currentTracePoints, geodesic: true,
-      strokeColor: "#d97706", strokeOpacity: 0.95, strokeWeight: 4,
+      strokeColor: stroke, strokeOpacity: 0.95, strokeWeight: 4,
       clickable: false, map
     });
   }
 }
+
 function addTracePoint(latLng){
+  const index = currentTracePoints.length;
   currentTracePoints.push(latLng);
+
   const marker = new google.maps.Marker({
-    position: latLng, map,
+    position: latLng,
+    map,
+    draggable: !panMode,
+    cursor: "grab",
+    zIndex: 100 + index,
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
-      scale: 5, fillColor: "#d97706", fillOpacity: 1,
-      strokeWeight: 2, strokeColor: "#ffffff"
+      scale: POINT_SCALE,
+      fillColor: pendingParentId ? "#1d4ed8" : "#f59e0b",
+      fillOpacity: 1,
+      strokeWeight: 2.5,
+      strokeColor: "#ffffff"
     }
   });
+
+  // Lock map while dragging this marker, then update on dragend
+  marker.addListener("dragstart", () => lockMapForMarkerDrag());
+  marker.addListener("dragend", (e) => {
+    currentTracePoints[index] = e.latLng;
+    renderActiveTrace();
+    tempMarkers[index] = marker;
+    unlockMapAfterMarkerDrag();
+  });
+
+  // Long-press to remove a point (great on mobile)
+  attachLongPress(marker, async () => {
+    if (currentTracePoints.length <= 1) return;
+    const ok = await showConfirm({
+      title: 'Remove this point?',
+      message: 'You can undo this with the Undo button.',
+      okText: 'Remove',
+      cancelText: 'Keep'
+    });
+    if (!ok) return;
+    currentTracePoints.splice(index, 1);
+    marker.setMap(null);
+    // Reindex remaining markers
+    const survivor = [];
+    tempMarkers.forEach((m, i) => {
+      if (i === index) return;
+      // Rebind listeners by rebuilding markers — simpler: just drop and rebuild
+      survivor.push(m);
+    });
+    tempMarkers = survivor;
+    // Rebuild markers because indices shifted
+    rebuildTraceMarkers();
+    renderActiveTrace();
+    updateTraceControls();
+    toast('Point removed', "info", 1600);
+  });
+
   tempMarkers.push(marker);
-  renderActiveTrace(); updateTraceControls();
+  renderActiveTrace();
+  updateTraceControls();
 }
+
+/* Rebuild all trace markers after a removal (rebinds listeners with fresh indices) */
+function rebuildTraceMarkers(){
+  tempMarkers.forEach(m => m.setMap(null));
+  tempMarkers = [];
+
+  const color = pendingParentId ? "#1d4ed8" : "#f59e0b";
+
+  currentTracePoints.forEach((latLng, index) => {
+    const marker = new google.maps.Marker({
+      position: latLng, map,
+      draggable: !panMode,
+      cursor: "grab",
+      zIndex: 100 + index,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: POINT_SCALE,
+        fillColor: color, fillOpacity: 1,
+        strokeWeight: 2.5, strokeColor: "#ffffff"
+      }
+    });
+
+    marker.addListener("dragstart", () => lockMapForMarkerDrag());
+    marker.addListener("dragend", (e) => {
+      currentTracePoints[index] = e.latLng;
+      renderActiveTrace();
+      tempMarkers[index] = marker;
+      unlockMapAfterMarkerDrag();
+    });
+
+    attachLongPress(marker, async () => {
+      if (currentTracePoints.length <= 1) return;
+      const ok = await showConfirm({
+        title: 'Remove this point?', okText: 'Remove', cancelText: 'Keep'
+      });
+      if (!ok) return;
+      currentTracePoints.splice(index, 1);
+      rebuildTraceMarkers();
+      renderActiveTrace();
+      updateTraceControls();
+      toast('Point removed', "info", 1600);
+    });
+
+    tempMarkers.push(marker);
+  });
+}
+
 function undoLastTracePoint(){
   if (!currentTracePoints.length) return;
   currentTracePoints.pop();
@@ -709,55 +1235,99 @@ function undoLastTracePoint(){
   if (m) m.setMap(null);
   renderActiveTrace(); updateTraceControls();
 }
+
 function updateTraceControls(){
   const n = currentTracePoints.length;
-  document.getElementById("traceCountText").textContent =
-    n === 0 ? "Tap the map to draw a path"
-            : `${n} point${n > 1 ? 's' : ''}${n >= 3 ? ' · area' : ''}`;
+  const el = document.getElementById("traceCountText");
+  if (panMode){
+    el.textContent = "✋ Pan mode — drag the map freely";
+    return;
+  }
+  if (pendingParentId){
+    const p = allTraces.find(t => String(t.item.id) === pendingParentId);
+    el.textContent = `Sub of "${p ? p.item.title : '?'}" · ${n} point${n === 1 ? '' : 's'}`;
+  } else {
+    el.textContent = n === 0
+      ? "Tap the map to start drawing"
+      : `${n} point${n > 1 ? 's' : ''}${n >= 3 ? ' · area' : ''}`;
+  }
 }
+
 async function finishTracing(btn){
   if (currentTracePoints.length < 3){
     toast("Tap at least 3 points to make an area", "error"); return;
   }
-  const title = prompt("Name this traced area:", "Property Boundary");
-  if (!title) return;
-  const pointsSnapshot = currentTracePoints.map(pt => ({ lat: pt.lat(), lng: pt.lng() }));
+  const isSub = !!pendingParentId;
+
+  const title = await showPrompt({
+    title: isSub ? 'Name this sub-trace' : 'Name this traced area',
+    message: 'Give it a short, recognizable name.',
+    defaultValue: isSub ? 'Sub-area' : 'Property Boundary',
+    okText: 'Save',
+    cancelText: 'Cancel'
+  });
+  if (!title || !title.trim()) return;
+
+  const pointsSnapshot = currentTracePoints.map(pt => ({
+    lat: typeof pt.lat === 'function' ? pt.lat() : pt.lat,
+    lng: typeof pt.lng === 'function' ? pt.lng() : pt.lng
+  }));
+  const parentIdSnapshot = pendingParentId;
 
   await withButtonBusy(btn, "⏳ Saving…", async () => {
     isTracing = false;
+    panMode = false;
+
+    let color = getRandomColor();
+    if (parentIdSnapshot){
+      const parent = allTraces.find(t => String(t.item.id) === parentIdSnapshot);
+      if (parent){
+        try {
+          const parsed = JSON.parse(parent.item.coordinates);
+          if (parsed && parsed.color) color = parsed.color;
+        } catch(e){}
+      }
+    }
+
     const traceRecord = {
-      id: Date.now().toString(), title, type: "trace",
+      id: Date.now().toString(),
+      title: title.trim(),
+      type: "trace",
+      parentId: parentIdSnapshot || "",
       coordinates: JSON.stringify({
         points: pointsSnapshot,
-        color: getRandomColor(),
+        color,
         closed: true
       })
     };
+
     if (traceRecord.coordinates.length > 49000){
-      toast(`Trace is too big (${pointsSnapshot.length} points). Try fewer points.`, "error", 6000);
+      toast(`Trace is too big (${pointsSnapshot.length} points).`, "error", 6000);
       isTracing = true;
       return;
     }
+
     const expectedTotal = lastRecordCount + 1;
     toast("Saving trace…");
     try {
       await submitToSheet(traceRecord);
       toast("Trace submitted — refreshing…", "success");
     } catch(e){
-      console.error("Network error saving trace:", e);
+      console.error("Save error:", e);
       toast("Save failed: network error", "error", 5000);
     }
     resetTraceMode();
     const ok = await refreshUntil(expectedTotal);
-    if (ok){
-      toast(`Synced — "${title}" visible`, "success");
-    } else {
-      toast("Saved, but the list hasn't updated yet. Tap 🔄 Refresh.", "error", 6000);
-    }
+    toast(ok ? `Synced — "${traceRecord.title}" visible` : "Saved, but list not updated. Tap 🔄 Refresh.",
+          ok ? "success" : "error", 5000);
   });
 }
+
 function resetTraceMode(){
-  isTracing = false; currentTracePoints = [];
+  isTracing = false;
+  pendingParentId = null;
+  panMode = false;
+  currentTracePoints = [];
   tempMarkers.forEach(m => m.setMap(null));
   tempMarkers = [];
   if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
@@ -765,21 +1335,14 @@ function resetTraceMode(){
   document.getElementById("traceBtn").hidden = false;
   document.getElementById("pinModeBtn").disabled = false;
   document.getElementById("traceActiveControls").hidden = true;
+  document.getElementById("panFab").hidden = true;
   hideMapBadge();
 }
 
-/* ============================================================
-   SHAPE EDIT MODE
-   ============================================================ */
+/* ============================================================ SHAPE EDIT MODE */
 function startEditingTrace(itemId){
-  if (isPinning || isTracing){
-    toast("Finish your current action first", "error");
-    return;
-  }
-  if (isEditing){
-    toast("Already editing a shape", "error");
-    return;
-  }
+  if (isPinning || isTracing){ toast("Finish your current action first", "error"); return; }
+  if (isEditing){ toast("Already editing a shape", "error"); return; }
 
   const t = allTraces.find(x => String(x.item.id) === String(itemId));
   if (!t){ toast("Trace not found", "error"); return; }
@@ -789,7 +1352,6 @@ function startEditingTrace(itemId){
   editingTraceItem = t.item;
   editingCoords = t.coords.map(c => ({ lat: Number(c.lat), lng: Number(c.lng) }));
 
-  // Show the edit panel
   const panel = document.getElementById("editPanel");
   panel.hidden = false;
   const input = document.getElementById("editTraceNameInput");
@@ -798,17 +1360,25 @@ function startEditingTrace(itemId){
   document.getElementById("pinModeBtn").disabled = true;
   document.getElementById("traceBtn").disabled = true;
 
-  // Highlight the group in the sidebar
-  document.querySelectorAll('.group').forEach(g => g.classList.remove('editing'));
+  document.querySelectorAll('.group.editing, .subgroup.editing').forEach(g => g.classList.remove('editing'));
   const row = document.querySelector(`[data-shape-edit="${CSS.escape(String(itemId))}"]`);
-  if (row) row.closest('.group').classList.add('editing');
+  if (row){
+    const card = row.closest('.subgroup') || row.closest('.group');
+    if (card) card.classList.add('editing');
+  }
 
-  showMapBadge("Edit shape — drag dots · click edge to add · right-click dot to remove", true);
-
+  showMapBadge("Edit shape — drag dots · tap edge to add · long-press dot to remove", true);
   renderEditingShape();
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  // Focus the name field for quick editing
-  setTimeout(() => { input.focus(); input.select(); }, 250);
+
+  // Mobile-friendly focus handling for keyboard
+  if (IS_TOUCH){
+    setTimeout(() => {
+      input.focus();
+      input.select();
+      input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 300);
+  }
 }
 
 function renderEditingShape(){
@@ -819,53 +1389,42 @@ function renderEditingShape(){
 
   if (editingCoords.length < 2) return;
 
-  // Fill layer — not clickable so plain map clicks still pass through
   editingFill = new google.maps.Polygon({
-    paths: editingCoords,
-    geodesic: true,
-    strokeColor: "#2563eb",
-    strokeOpacity: 1,
-    strokeWeight: 6,
-    fillColor: "#2563eb",
-    fillOpacity: 0.12,
-    clickable: false,
-    map
+    paths: editingCoords, geodesic: true,
+    strokeColor: "#2563eb", strokeOpacity: 1, strokeWeight: 6,
+    fillColor: "#2563eb", fillOpacity: 0.12,
+    clickable: false, map
   });
 
-  // Invisible wide hit-target line for edge clicks
   editingPolyline = new google.maps.Polyline({
-    path: editingCoords,
-    geodesic: true,
-    strokeColor: "#1d4ed8",
-    strokeOpacity: 0,
-    strokeWeight: 18,
-    clickable: true,
-    map
+    path: editingCoords, geodesic: true,
+    strokeColor: "#1d4ed8", strokeOpacity: 0, strokeWeight: 22,
+    clickable: true, map
   });
   editingPolyline.addListener("click", (e) => handleEdgeClick(e.latLng));
 
-  // Vertex dots
   editingCoords.forEach((c, i) => {
     const marker = new google.maps.Marker({
-      position: c,
-      map,
-      draggable: true,
-      cursor: "grab",
-      zIndex: 500 + i,
+      position: c, map, draggable: true, cursor: "grab", zIndex: 500 + i,
       icon: {
         path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: "#f59e0b",
-        fillOpacity: 1,
-        strokeWeight: 2.5,
-        strokeColor: "#ffffff"
+        scale: VERTEX_SCALE, fillColor: "#f59e0b", fillOpacity: 1,
+        strokeWeight: 2.5, strokeColor: "#ffffff"
       }
     });
+
+    marker.addListener("dragstart", () => lockMapForMarkerDrag());
     marker.addListener("dragend", (e) => {
       editingCoords[i] = { lat: e.latLng.lat(), lng: e.latLng.lng() };
       updateEditingPaths();
+      unlockMapAfterMarkerDrag();
     });
+
+    // Desktop: right-click
     marker.addListener("rightclick", () => removeEditingVertex(i));
+    // Mobile + desktop: long-press
+    attachLongPress(marker, () => removeEditingVertex(i));
+
     editingMarkers.push(marker);
   });
 }
@@ -877,7 +1436,6 @@ function updateEditingPaths(){
 
 function handleEdgeClick(latLng){
   const pt = { lat: latLng.lat(), lng: latLng.lng() };
-
   let bestI = 0, bestDist = Infinity, bestProjected = pt;
   for (let i = 0; i < editingCoords.length; i++){
     const a = editingCoords[i];
@@ -886,21 +1444,25 @@ function handleEdgeClick(latLng){
     const d = haversineMeters(pt, proj);
     if (d < bestDist){ bestDist = d; bestI = i; bestProjected = proj; }
   }
-
   const metersPerPixel = 156543.03392 * Math.cos(pt.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
-  const threshold = 30 * metersPerPixel;
+  const threshold = (IS_TOUCH ? 45 : 30) * metersPerPixel;   // more forgiving on touch
   if (bestDist > threshold) return;
-
   editingCoords.splice(bestI + 1, 0, bestProjected);
   renderEditingShape();
   toast(`Added point (${editingCoords.length} total)`, "success", 1600);
 }
 
-function removeEditingVertex(index){
+async function removeEditingVertex(index){
   if (editingCoords.length <= 3){
-    toast("A shape needs at least 3 points", "error");
-    return;
+    toast("A shape needs at least 3 points", "error"); return;
   }
+  const ok = await showConfirm({
+    title: 'Remove this point?',
+    message: 'The shape will be redrawn without it.',
+    okText: 'Remove',
+    cancelText: 'Keep'
+  });
+  if (!ok) return;
   editingCoords.splice(index, 1);
   renderEditingShape();
   toast(`Removed point (${editingCoords.length} remaining)`, "info", 1600);
@@ -908,18 +1470,13 @@ function removeEditingVertex(index){
 
 async function saveEditedTrace(btn){
   if (editingCoords.length < 3){ toast("Need at least 3 points", "error"); return; }
-
   const nameInput = document.getElementById("editTraceNameInput");
   const newTitle = (nameInput.value || "").trim();
-
   if (!newTitle){
-    toast("Please enter a name for this shape", "error");
-    nameInput.focus();
-    return;
+    toast("Please enter a name", "error"); nameInput.focus(); return;
   }
 
   await withButtonBusy(btn, "⏳ Saving…", async () => {
-    // Preserve the original colour; fall back if missing
     let color = "#2563eb";
     try {
       const parsed = JSON.parse(editingTraceItem.coordinates);
@@ -928,7 +1485,7 @@ async function saveEditedTrace(btn){
 
     const updated = {
       ...editingTraceItem,
-      title: newTitle,                        // <-- name is included
+      title: newTitle,
       coordinates: JSON.stringify({
         points: editingCoords,
         color,
@@ -937,24 +1494,22 @@ async function saveEditedTrace(btn){
     };
 
     if (updated.coordinates.length > 49000){
-      toast(`Shape is too big (${editingCoords.length} points).`, "error", 6000);
-      return;
+      toast(`Shape is too big (${editingCoords.length} points).`, "error", 6000); return;
     }
-
-    const expectedTotal = lastRecordCount;   // no count change on update
 
     toast("Saving changes…");
     try {
       await submitToSheet(updated);
       toast("Changes submitted — refreshing…", "success");
     } catch(e){
-      console.error("Error saving shape:", e);
+      console.error("Save error:", e);
       toast("Save failed: network error", "error", 5000);
     }
 
     cancelEditingTrace();
-    const ok = await refreshUntil(expectedTotal, 4);
-    toast(ok ? "Synced — shape updated" : "Saved, but the list hasn't refreshed. Tap 🔄 Refresh.", ok ? "success" : "error", 5000);
+    const ok = await refreshUntil(lastRecordCount, 4);
+    toast(ok ? "Synced — shape updated" : "Saved, but list not updated. Tap 🔄 Refresh.",
+          ok ? "success" : "error", 5000);
   });
 }
 
@@ -962,17 +1517,14 @@ function cancelEditingTrace(){
   isEditing = false;
   editingTraceItem = null;
   editingCoords = [];
-
   editingMarkers.forEach(m => m.setMap(null));
   editingMarkers = [];
   if (editingPolyline){ editingPolyline.setMap(null); editingPolyline = null; }
   if (editingFill){ editingFill.setMap(null); editingFill = null; }
-
   document.getElementById("editPanel").hidden = true;
   document.getElementById("pinModeBtn").disabled = false;
   document.getElementById("traceBtn").disabled = false;
-
-  document.querySelectorAll('.group.editing').forEach(g => g.classList.remove('editing'));
+  document.querySelectorAll('.group.editing, .subgroup.editing').forEach(g => g.classList.remove('editing'));
   hideMapBadge();
 }
 
@@ -1004,9 +1556,7 @@ async function manualRefresh(btn){
       clearOverlays();
       const count = await fetchPlacesFromSheet();
       toast(`Loaded ${count} record${count === 1 ? '' : 's'}`, "success");
-    } catch(e){
-      toast("Refresh failed", "error");
-    }
+    } catch(e){ toast("Refresh failed", "error"); }
   });
 }
 
@@ -1016,11 +1566,12 @@ async function fetchPlacesFromSheet(){
     const response = await fetch(APPS_SCRIPT_URL + "?nocache=" + Date.now());
     allRecords = await response.json();
     listContainer.innerHTML = "";
+
     if (!Array.isArray(allRecords) || allRecords.length === 0){
       allTraces = [];
       lastRecordCount = 0;
       listContainer.innerHTML =
-        `<div class="empty"><span class="big">🗺️</span>No saved items yet.<br>Start by drawing a trace, then add pins inside it.</div>`;
+        `<div class="empty"><span class="big">🗺️</span>No saved items yet.<br>Draw a main trace first (e.g. "anayan").</div>`;
       document.getElementById('recordCount').textContent = '0';
       return 0;
     }
@@ -1039,7 +1590,14 @@ async function fetchPlacesFromSheet(){
             strokeColor = parsed.color || strokeColor;
           }
         } catch(e){ return; }
-        if (coords.length > 0) traces.push({ item, coords, strokeColor });
+        if (coords.length > 0){
+          traces.push({
+            item,
+            coords,
+            strokeColor,
+            parentId: item.parentId ? String(item.parentId) : ""
+          });
+        }
       } else if (item.latitude && item.longitude){
         pins.push({ item, pos: { lat: parseFloat(item.latitude), lng: parseFloat(item.longitude) } });
       }
@@ -1047,17 +1605,43 @@ async function fetchPlacesFromSheet(){
 
     allTraces = traces;
 
-    const traceGroupMap = {};
+    const traceById = new Map();
+    traces.forEach(t => traceById.set(String(t.item.id), t));
+
+    const roots = [];
+    const childrenMap = new Map();
     traces.forEach(t => {
-      traceGroupMap[t.item.id] = { trace: t, pins: [] };
+      if (t.parentId && traceById.has(t.parentId)){
+        if (!childrenMap.has(t.parentId)) childrenMap.set(t.parentId, []);
+        childrenMap.get(t.parentId).push(t);
+      } else {
+        roots.push(t);
+      }
+    });
+
+    const sorted = [...traces].sort((a, b) => {
+      const aIsSub = a.parentId ? 1 : 0;
+      const bIsSub = b.parentId ? 1 : 0;
+      return aIsSub - bIsSub;
+    });
+
+    sorted.forEach(t => {
+      const isSub = !!t.parentId && traceById.has(t.parentId);
+      const hasChildren = childrenMap.has(String(t.item.id));
+
+      let fillOpacity, strokeWeight, strokeOpacity;
+      if (isSub){ fillOpacity = 0.24; strokeWeight = 3; strokeOpacity = 0.9; }
+      else if (hasChildren){ fillOpacity = 0.06; strokeWeight = 4; strokeOpacity = 0.65; }
+      else { fillOpacity = 0.18; strokeWeight = 4; strokeOpacity = 0.85; }
+
       featureIndex.set(String(t.item.id), { kind:'trace', coords: t.coords });
 
       let poly;
       if (t.coords.length >= 3){
         poly = new google.maps.Polygon({
           paths: t.coords, geodesic: true,
-          strokeColor: t.strokeColor, strokeOpacity: 0.85, strokeWeight: 4,
-          fillColor: t.strokeColor, fillOpacity: 0.18,
+          strokeColor: t.strokeColor, strokeOpacity, strokeWeight,
+          fillColor: t.strokeColor, fillOpacity,
           clickable: false, map
         });
       } else {
@@ -1073,18 +1657,23 @@ async function fetchPlacesFromSheet(){
         position: t.coords[0], map, title: t.item.title,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 6, fillColor: t.strokeColor, fillOpacity: 1,
+          scale: isSub ? 5 : 6,
+          fillColor: t.strokeColor, fillOpacity: 1,
           strokeWeight: 2, strokeColor: "#ffffff"
         }
       });
       drawnOverlays.push(startDot);
     });
 
+    const pinsByTraceId = new Map();
     const unassignedPins = [];
+
     pins.forEach(pinObj => {
       const containing = findTraceContaining(new google.maps.LatLng(pinObj.pos));
       if (containing){
-        traceGroupMap[containing.item.id].pins.push(pinObj);
+        const key = String(containing.item.id);
+        if (!pinsByTraceId.has(key)) pinsByTraceId.set(key, []);
+        pinsByTraceId.get(key).push(pinObj);
       } else {
         unassignedPins.push(pinObj);
       }
@@ -1097,15 +1686,17 @@ async function fetchPlacesFromSheet(){
       drawnOverlays.push(marker);
     });
 
-    Object.values(traceGroupMap).forEach(g =>
-      renderTraceGroup(g.trace.item, g.trace.coords, g.trace.strokeColor, g.pins)
-    );
+    roots.forEach(root => {
+      const children = childrenMap.get(String(root.item.id)) || [];
+      const directPins = pinsByTraceId.get(String(root.item.id)) || [];
+      renderParentGroup(root, children, directPins, pinsByTraceId);
+    });
     if (unassignedPins.length) renderUnassignedGroup(unassignedPins);
 
     lastRecordCount = allRecords.length;
     document.getElementById('recordCount').textContent = allRecords.length;
 
-    console.log(`[Places & Traces] Loaded ${allTraces.length} traces, ${pins.length} pins, ${allRecords.length} total.`);
+    console.log(`[Places & Traces] ${roots.length} roots, ${traces.length - roots.length} sub-traces, ${pins.length} pins.`);
     return allRecords.length;
 
   } catch (error){
@@ -1117,59 +1708,93 @@ async function fetchPlacesFromSheet(){
 }
 
 /* ============================================================ RENDERING */
-function renderTraceGroup(traceItem, coords, color, assignedPins){
+function renderParentGroup(rootTrace, children, directPins, pinsByTraceId){
   const container = document.getElementById("listContainer");
   const group = document.createElement("div");
   group.className = "group";
-  let pinsHtml = "";
-  if (assignedPins.length === 0){
-    pinsHtml = `<div style="font-size:.72rem;color:var(--text-faint);padding:8px 4px 4px;text-align:center;">No pins inside this trace yet</div>`;
-  } else {
-    pinsHtml = assignedPins.map(p => `
-      <div class="record" data-goto="${esc(p.item.id)}">
-        <div class="swatch" style="background:#16a34a"></div>
-        <div class="rec-info">
-          <div class="rec-title">${esc(p.item.title)}</div>
-          <div class="rec-type">${esc(p.item.type)}</div>
-        </div>
-        <button class="edit-btn" data-edit="${esc(p.item.id)}" title="Rename">✏️</button>
-        <button class="del-btn" data-del="${esc(p.item.id)}" data-del-title="${esc(p.item.title)}" data-del-kind="pin" title="Delete pin">🗑</button>
-      </div>`).join("");
+  group.dataset.traceId = String(rootTrace.item.id);
+
+  const totalPins = directPins.length +
+    children.reduce((sum, c) => sum + (pinsByTraceId.get(String(c.item.id)) || []).length, 0);
+
+  const subCountLabel = children.length
+    ? `${children.length} sub · ${totalPins}`
+    : String(totalPins);
+
+  let bodyHtml = "";
+
+  children.forEach(child => {
+    const childPins = pinsByTraceId.get(String(child.item.id)) || [];
+    bodyHtml += renderSubGroupHtml(child, childPins);
+  });
+
+  if (directPins.length){
+    bodyHtml += `<div class="pin-list">` + directPins.map(p => pinRowHtml(p)).join("") + `</div>`;
+  } else if (children.length === 0){
+    bodyHtml = `<div class="hint-empty">No pins inside this trace yet</div>`;
   }
+
   group.innerHTML = `
     <div class="group-head" data-toggle>
       <span class="caret">▶</span>
-      <span class="swatch" style="background:${esc(color)}"></span>
-      <span class="group-title">${esc(traceItem.title)}</span>
-      <span style="font-size:.66rem;color:var(--text-faint);flex-shrink:0">${assignedPins.length}</span>
-      <button class="zoom-btn" data-zoom="${esc(traceItem.id)}">Zoom</button>
-      <button class="edit-btn" data-shape-edit="${esc(traceItem.id)}" title="Edit shape">✏️</button>
-      <button class="del-btn" data-del="${esc(traceItem.id)}" data-del-title="${esc(traceItem.title)}" data-del-kind="trace" title="Delete trace">🗑</button>
+      <span class="swatch" style="background:${esc(rootTrace.strokeColor)}"></span>
+      <span class="group-title">${esc(rootTrace.item.title)}</span>
+      <span class="count-pill">${subCountLabel}</span>
+      <button class="zoom-btn" data-zoom="${esc(rootTrace.item.id)}">Zoom</button>
+      <button class="icon-btn edit" data-shape-edit="${esc(rootTrace.item.id)}" title="Edit shape">✏️</button>
+      <button class="icon-btn sub" data-add-sub="${esc(rootTrace.item.id)}" title="Add sub-trace">＋</button>
+      <button class="icon-btn del" data-del="${esc(rootTrace.item.id)}" data-del-title="${esc(rootTrace.item.title)}" data-del-kind="trace" title="Delete trace">🗑</button>
     </div>
-    <div class="group-body"><div class="inner"><div class="pin-list">${pinsHtml}</div></div></div>
+    <div class="group-body"><div class="inner">${bodyHtml}</div></div>
   `;
   container.appendChild(group);
 }
-function renderUnassignedGroup(unassignedPins){
-  const container = document.getElementById("listContainer");
-  const group = document.createElement("div");
-  group.className = "group";
-  const pinsHtml = unassignedPins.map(p => `
+
+function renderSubGroupHtml(subTrace, childPins){
+  const pinsHtml = childPins.length
+    ? `<div class="pin-list">` + childPins.map(p => pinRowHtml(p)).join("") + `</div>`
+    : `<div class="hint-empty">No pins yet</div>`;
+
+  return `
+    <div class="subgroup" data-trace-id="${esc(subTrace.item.id)}">
+      <div class="subgroup-head" data-toggle-sub>
+        <span class="caret">▶</span>
+        <span class="swatch" style="background:${esc(subTrace.strokeColor)}"></span>
+        <span class="subgroup-title">${esc(subTrace.item.title)}</span>
+        <span class="count-pill">${childPins.length}</span>
+        <button class="zoom-btn" data-zoom="${esc(subTrace.item.id)}">Zoom</button>
+        <button class="icon-btn edit" data-shape-edit="${esc(subTrace.item.id)}" title="Edit shape">✏️</button>
+        <button class="icon-btn del" data-del="${esc(subTrace.item.id)}" data-del-title="${esc(subTrace.item.title)}" data-del-kind="trace" title="Delete sub-trace">🗑</button>
+      </div>
+      <div class="subgroup-body"><div class="inner">${pinsHtml}</div></div>
+    </div>
+  `;
+}
+
+function pinRowHtml(p){
+  return `
     <div class="record" data-goto="${esc(p.item.id)}">
-      <div class="swatch" style="background:#94a3b8"></div>
+      <div class="swatch" style="background:#16a34a"></div>
       <div class="rec-info">
         <div class="rec-title">${esc(p.item.title)}</div>
         <div class="rec-type">${esc(p.item.type)}</div>
       </div>
       <button class="edit-btn" data-edit="${esc(p.item.id)}" title="Rename">✏️</button>
       <button class="del-btn" data-del="${esc(p.item.id)}" data-del-title="${esc(p.item.title)}" data-del-kind="pin" title="Delete pin">🗑</button>
-    </div>`).join("");
+    </div>`;
+}
+
+function renderUnassignedGroup(unassignedPins){
+  const container = document.getElementById("listContainer");
+  const group = document.createElement("div");
+  group.className = "group";
+  const pinsHtml = unassignedPins.map(p => pinRowHtml(p)).join("");
   group.innerHTML = `
     <div class="group-head" data-toggle>
       <span class="caret">▶</span>
       <span class="swatch" style="background:#94a3b8"></span>
-      <span class="group-title" style="color:var(--text-dim)">Unassigned pins (legacy)</span>
-      <span style="font-size:.66rem;color:var(--text-faint);flex-shrink:0">${unassignedPins.length}</span>
+      <span class="group-title" style="color:var(--text-dim)">Unassigned pins</span>
+      <span class="count-pill">${unassignedPins.length}</span>
     </div>
     <div class="group-body"><div class="inner"><div class="pin-list">${pinsHtml}</div></div></div>
   `;
@@ -1178,12 +1803,11 @@ function renderUnassignedGroup(unassignedPins){
 
 /* ============================================================ LIST CLICKS */
 document.getElementById('listContainer').addEventListener('click', (e) => {
+  const addSubBtn = e.target.closest('[data-add-sub]');
+  if (addSubBtn){ e.stopPropagation(); startTracing(addSubBtn.dataset.addSub); return; }
+
   const shapeEditBtn = e.target.closest('[data-shape-edit]');
-  if (shapeEditBtn){
-    e.stopPropagation();
-    startEditingTrace(shapeEditBtn.dataset.shapeEdit);
-    return;
-  }
+  if (shapeEditBtn){ e.stopPropagation(); startEditingTrace(shapeEditBtn.dataset.shapeEdit); return; }
 
   const delBtn = e.target.closest('[data-del]');
   if (delBtn){
@@ -1215,6 +1839,9 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
     return;
   }
 
+  const subHead = e.target.closest('[data-toggle-sub]');
+  if (subHead){ subHead.closest('.subgroup').classList.toggle('open'); return; }
+
   const head = e.target.closest('[data-toggle]');
   if (head){ head.closest('.group').classList.toggle('open'); }
 });
@@ -1223,10 +1850,29 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
 async function deleteRecord(id, title, kind, btn){
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
 
-  const message = kind === 'trace'
-    ? `Delete the trace "${title}"?\n\nPins inside it will NOT be deleted — they'll just become unassigned.\n\nThis can't be undone.`
-    : `Delete the pin "${title}"?\n\nThis can't be undone.`;
-  if (!confirm(message)) return;
+  let childCount = 0;
+  if (kind === 'trace'){
+    childCount = allTraces.filter(t => t.parentId === String(id)).length;
+  }
+
+  let message;
+  if (kind === 'trace'){
+    message = `Delete the trace "${title}"?`;
+    if (childCount > 0){
+      message += `\n\n⚠ This trace has ${childCount} sub-trace(s). They will become top-level traces.`;
+    }
+    message += `\n\nPins inside it will NOT be deleted.`;
+  } else {
+    message = `Delete the pin "${title}"?`;
+  }
+
+  const ok = await showConfirm({
+    title: kind === 'trace' ? 'Delete trace?' : 'Delete pin?',
+    message,
+    okText: 'Delete',
+    cancelText: 'Cancel'
+  });
+  if (!ok) return;
 
   await withButtonBusy(btn, "⏳", async () => {
     toast("Deleting…");
@@ -1243,22 +1889,28 @@ async function deleteRecord(id, title, kind, btn){
   });
 }
 
-/* ============================================================ EDIT NAME (pins only now) */
+/* ============================================================ EDIT PIN NAME */
 async function editItemName(item, btn){
-  const newTitle = prompt("Enter new name:", item.title);
-  if (!newTitle || newTitle === item.title) return;
+  const newTitle = await showPrompt({
+    title: 'Rename pin',
+    message: 'Enter a new name for this pin.',
+    defaultValue: item.title || '',
+    okText: 'Rename',
+    cancelText: 'Cancel'
+  });
+  if (!newTitle || !newTitle.trim() || newTitle === item.title) return;
 
   await withButtonBusy(btn, "⏳", async () => {
     toast("Renaming…");
     try {
-      await submitToSheet({ ...item, title: newTitle });
+      await submitToSheet({ ...item, title: newTitle.trim() });
       toast("Renamed", "success");
       await new Promise(r => setTimeout(r, 1200));
       clearOverlays();
       await fetchPlacesFromSheet();
     } catch(err){
-      console.error("Network error renaming:", err);
-      toast("Rename failed: network error", "error", 5000);
+      console.error("Rename error:", err);
+      toast("Rename failed", "error", 5000);
     }
   });
 }
