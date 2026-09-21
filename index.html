@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
 <title>Territory Mapper</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232563eb'/%3E%3Cstop offset='1' stop-color='%234f8ef7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-family='Inter,-apple-system,Segoe UI,Roboto,sans-serif' font-size='30' font-weight='800' fill='white' letter-spacing='-1'%3ETM%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232563eb'/%3E%3Cstop offset='1' stop-color='%234f8ef7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Cpath d='M16 44V22l16 12 16-12v22' stroke='white' stroke-width='4.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='48' cy='16' r='5' fill='white'/%3E%3Ccircle cx='48' cy='16' r='2' fill='%232563eb'/%3E%3C/svg%3E">
+<script src="https://unpkg.com/@googlemaps/markerclusterer@2.5.3/dist/index.min.js" onerror="window.__noClusterer=true"></script>
 <style>
 :root{
   --bg:#f5f7fa;--surface:#ffffff;--surface-2:#f2f4f8;--border:#e4e8ef;
@@ -17,6 +18,7 @@
   --sh-2:0 4px 14px rgba(16,24,40,.09);
   --sh-3:0 12px 32px rgba(16,24,40,.14);
   --tap-min:44px;
+  --sheet-height:45dvh;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -25,7 +27,9 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
   overscroll-behavior:none}
 
-/* ---------------- SIDEBAR ---------------- */
+.ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:0}
+.ic svg{display:block}
+
 #sidebar{width:390px;flex-shrink:0;height:100vh;height:100dvh;background:var(--surface);
   border-right:1px solid var(--border);display:flex;flex-direction:column;
   overflow-y:auto;overflow-x:hidden;z-index:20;-webkit-overflow-scrolling:touch;
@@ -34,18 +38,12 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 #sidebar::-webkit-scrollbar-thumb{background:#d5dbe4;border-radius:99px;border:2px solid var(--surface)}
 #sidebar::-webkit-scrollbar-thumb:hover{background:#c0c8d4}
 
-/* ---------------- BRAND / LOGO ---------------- */
 .brand{display:flex;align-items:center;gap:12px;padding:18px 18px 16px;
   border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:5}
-
-.brand-logo{
-  width:40px;height:40px;flex-shrink:0;position:relative;
-  filter:drop-shadow(0 4px 10px rgba(37,99,235,.35));
-}
+.brand-logo{width:40px;height:40px;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(37,99,235,.35))}
 .brand-logo svg{display:block;width:100%;height:100%}
-
-.brand h1{font-size:1.02rem;font-weight:750;letter-spacing:-.02em;line-height:1.15;color:var(--text)}
-.brand p{font-size:.7rem;color:var(--text-faint);margin-top:3px;letter-spacing:.005em}
+.brand h1{font-size:1.02rem;font-weight:750;letter-spacing:-.02em;line-height:1.15}
+.brand p{font-size:.7rem;color:var(--text-faint);margin-top:3px}
 
 .section{padding:16px 18px;border-bottom:1px solid var(--border)}
 .section:last-child{border-bottom:none}
@@ -55,8 +53,7 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .sec-head .count{background:var(--surface-2);color:var(--text-dim);
   font-size:.68rem;padding:2px 7px;border-radius:99px;letter-spacing:0}
 
-/* ---------------- BUTTONS ---------------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:11px 14px;border:none;border-radius:var(--r-md);
   font-family:inherit;font-size:.845rem;font-weight:600;letter-spacing:-.005em;
   cursor:pointer;transition:background .16s,box-shadow .16s,transform .08s,color .16s;
@@ -79,27 +76,24 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .btn-dark:hover:not(:disabled){background:#0f172a}
 .btn-row{display:flex;gap:8px}
 
-/* ---------------- FIELDS ---------------- */
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
 .field label{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
-.field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
-  font-family:inherit;font-size:16px;
-  font-weight:600;color:var(--text);background:var(--surface);
-  transition:border-color .14s,box-shadow .14s;outline:none}
-.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+.field input,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
+  font-family:inherit;font-size:16px;font-weight:600;color:var(--text);background:var(--surface);
+  transition:border-color .14s,box-shadow .14s;outline:none;resize:vertical}
+.field textarea{font-size:.85rem;font-weight:500;line-height:1.5;min-height:70px}
+.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
 
-/* ---------------- CHIPS ---------------- */
 .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:11px}
-.chip{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 4px;
+.chip{display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 4px;
   border-radius:var(--r-md);background:var(--surface);border:1.5px solid var(--border);
   cursor:pointer;font-family:inherit;font-size:.72rem;font-weight:600;color:var(--text-dim);
   transition:all .16s;min-height:var(--tap-min);touch-action:manipulation}
 .chip:hover{border-color:#cbd5e1;background:var(--surface-2)}
-.chip .emoji{font-size:1.15rem;line-height:1}
 .chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-ring)}
+.chip .emoji-ic{width:20px;height:20px;display:flex;align-items:center;justify-content:center}
 
-/* ---------------- MODE BAR ---------------- */
 .mode-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 11px;
   border-radius:var(--r-md);background:var(--accent-soft);border:1px solid #cfe0fd;animation:slideDown .2s ease}
 .mode-bar.amber{background:var(--amber-soft);border-color:#fed7aa}
@@ -118,12 +112,12 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 
-/* ---------------- GROUPS ---------------- */
+/* ---------- GROUPS ---------- */
 .group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
   overflow:hidden;margin-bottom:9px;box-shadow:var(--sh-1);transition:box-shadow .18s}
 .group.editing{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18), var(--sh-1)}
-.group-head{display:flex;align-items:center;gap:7px;padding:11px 12px;cursor:pointer;
-  user-select:none;transition:background .14s;-webkit-user-select:none}
+.group-head{display:flex;align-items:center;gap:6px;padding:11px 10px 11px 12px;cursor:pointer;
+  user-select:none;transition:background .14s}
 .group-head:hover{background:var(--surface-2)}
 .caret{font-size:.6rem;color:var(--text-faint);flex-shrink:0;transition:transform .2s ease;
   width:9px;text-align:center}
@@ -131,19 +125,17 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .swatch{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .group-title{font-size:.83rem;font-weight:650;flex:1;min-width:0;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.005em}
-.count-pill{font-size:.62rem;color:var(--text-faint);background:var(--surface-2);
-  padding:2px 6px;border-radius:99px;flex-shrink:0}
-.zoom-btn{font-size:.68rem;font-weight:600;color:var(--accent);background:transparent;
-  border:none;padding:8px 8px;border-radius:var(--r-sm);cursor:pointer;font-family:inherit;
-  flex-shrink:0;transition:background .14s;min-height:32px;min-width:32px;touch-action:manipulation}
-.zoom-btn:hover{background:var(--accent-soft)}
-.icon-btn{background:var(--surface);border:1px solid var(--border);width:34px;height:34px;
-  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.72rem;
-  flex-shrink:0;transition:all .14s;font-family:inherit;padding:0;touch-action:manipulation}
-.icon-btn:hover:not(:disabled){background:var(--surface-2)}
+.zoom-btn{background:transparent;border:none;padding:6px;border-radius:var(--r-sm);
+  cursor:pointer;color:var(--text-dim);flex-shrink:0;transition:all .14s;touch-action:manipulation;
+  display:grid;place-items:center}
+.zoom-btn:hover{background:var(--surface-2);color:var(--accent)}
+.icon-btn{background:var(--surface);border:1px solid var(--border);width:30px;height:30px;
+  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;
+  flex-shrink:0;transition:all .14s;font-family:inherit;padding:0;touch-action:manipulation;color:var(--text-dim)}
+.icon-btn:hover:not(:disabled){background:var(--surface-2);color:var(--text)}
 .icon-btn.edit:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
 .icon-btn.del:hover:not(:disabled){background:var(--danger);border-color:var(--danger);color:#fff}
-.icon-btn.sub{border-color:#bbf7d0;color:var(--green);font-weight:800}
+.icon-btn.sub{border-color:#bbf7d0;color:var(--green)}
 .icon-btn.sub:hover:not(:disabled){background:#dcfce7}
 .icon-btn:disabled{opacity:.5;cursor:wait}
 
@@ -151,48 +143,68 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .group.open .group-body{grid-template-rows:1fr}
 .group-body > .inner{overflow:hidden}
 
+/* ---------- PIN SUMMARY CHIPS ---------- */
+.pin-summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  padding:0 12px 11px 12px}
+.subgroup .pin-summary{padding:0 10px 9px 10px}
+.pin-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;
+  font-size:.72rem;font-weight:700;line-height:1;letter-spacing:-.005em;
+  background:var(--surface-2);color:var(--text-dim)}
+.pin-chip svg{width:13px;height:13px;display:block;flex-shrink:0}
+.pin-chip.house{background:#eff5ff;color:#2563eb}
+.pin-chip.store{background:#dcfce7;color:#15803d}
+.pin-chip.landmark{background:#fee2e2;color:#b91c1c}
+.pin-chip.other{background:var(--surface-2);color:var(--text-dim)}
+.pin-chip.empty{background:transparent;color:var(--text-faint);font-weight:600;
+  font-size:.68rem;padding:2px 0;letter-spacing:0}
+
+/* ---------- SUBGROUPS ---------- */
 .subgroup{background:#f8fafc;border:1px solid #e8edf3;border-radius:var(--r-md);
-  margin:0 9px 7px;overflow:hidden}
+  margin:0 9px 7px;overflow:hidden;position:relative}
+.subgroup:last-child{margin-bottom:9px}
 .subgroup.editing{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.14)}
-.subgroup-head{display:flex;align-items:center;gap:7px;padding:8px 10px;cursor:pointer;
-  user-select:none;transition:background .14s;font-size:.78rem;-webkit-user-select:none}
+.subgroup-head{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 10px;cursor:pointer;
+  user-select:none;transition:background .14s;font-size:.78rem}
 .subgroup-head:hover{background:#eef2f7}
 .subgroup .caret{font-size:.55rem}
 .subgroup-title{font-weight:600;flex:1;min-width:0;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
-.subgroup .swatch{width:9px;height:9px}
-.subgroup-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s cubic-bezier(.4,0,.2,1)}
-.subgroup.open .subgroup-body{grid-template-rows:1fr}
-.subgroup-body > .inner{overflow:hidden}
-
-.pin-list{display:flex;flex-direction:column;gap:5px;padding:4px 9px 10px}
-.subgroup .pin-list{padding:0 7px 8px}
-.record{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r-md);
-  background:var(--surface-2);cursor:pointer;transition:background .14s}
-.record:hover{background:var(--accent-soft)}
-.record .swatch{width:8px;height:8px;border-radius:50%}
-.rec-info{flex:1;min-width:0}
-.rec-title{font-size:.8rem;font-weight:600;color:var(--text);overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.rec-type{font-size:.66rem;color:var(--text-faint);text-transform:uppercase;
-  letter-spacing:.05em;margin-top:2px}
-.edit-btn{background:var(--surface);border:1px solid var(--border);width:34px;height:34px;
-  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.75rem;
-  flex-shrink:0;transition:all .14s;font-family:inherit;touch-action:manipulation}
-.edit-btn:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
-.edit-btn:disabled{opacity:.6;cursor:wait}
-.del-btn{background:var(--surface);border:1px solid var(--border);width:34px;height:34px;
-  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;font-size:.75rem;
-  flex-shrink:0;transition:all .14s;font-family:inherit;touch-action:manipulation}
-.del-btn:hover:not(:disabled){background:var(--danger);border-color:var(--danger);color:#fff}
-.del-btn:disabled{opacity:.6;cursor:wait}
+.subgroup .swatch{width:9px;height:9px}
+.subgroup .icon-btn{width:26px;height:26px}
+.subgroup .zoom-btn{padding:5px}
+
+/* ---------- EXPANDABLE PIN LIST ---------- */
+.pin-details{display:none;padding:0 10px 10px}
+.group.pins-open .pin-details,
+.subgroup.pins-open .pin-details{display:block}
+.pin-details-list{display:flex;flex-direction:column;gap:4px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:5px;max-height:260px;overflow-y:auto}
+.pin-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;
+  background:var(--surface-2);font-size:.75rem;cursor:pointer;transition:background .14s;
+  touch-action:manipulation;position:relative}
+.pin-row:hover{background:var(--accent-soft)}
+.pin-row:active{background:var(--accent-soft)}
+.pin-row .pin-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pin-row .pin-type{flex:1;font-weight:600;color:var(--text);text-transform:capitalize;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pin-row .pin-go{color:var(--text-faint);display:grid;place-items:center;flex-shrink:0}
+.pin-row .pin-del{background:transparent;border:none;padding:4px;border-radius:5px;
+  cursor:pointer;color:var(--text-faint);display:grid;place-items:center;transition:all .14s;flex-shrink:0}
+.pin-row .pin-del:hover{background:var(--danger);color:#fff}
+
+.show-pins-btn{background:transparent;border:none;padding:4px 8px;border-radius:99px;
+  font-family:inherit;font-size:.66rem;font-weight:700;letter-spacing:.02em;
+  text-transform:uppercase;color:var(--accent);cursor:pointer;
+  transition:background .14s;margin-left:auto;flex-shrink:0}
+.show-pins-btn:hover{background:var(--accent-soft)}
 
 .hint-empty{font-size:.72rem;color:var(--text-faint);padding:8px 12px;text-align:center}
 
-.empty{text-align:center;padding:28px 16px;color:var(--text-faint);font-size:.8rem;line-height:1.6}
-.empty .big{font-size:1.8rem;display:block;margin-bottom:8px;opacity:.5}
+.empty{text-align:center;padding:36px 20px;color:var(--text-faint);font-size:.82rem;line-height:1.6}
+.empty .big-ic{margin:0 auto 14px;width:56px;height:56px;color:#cbd5e1;display:grid;place-items:center}
 
-/* ---------------- MAP ---------------- */
+/* ---------- MAP ---------- */
 #mapWrap{flex:1;height:100%;min-width:0;position:relative;background:#e8eaed}
 #map{width:100%;height:100%}
 
@@ -204,10 +216,20 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .map-badge .dot{width:7px;height:7px;border-radius:50%;background:#60a5fa;flex-shrink:0;
   animation:pulse 1.4s ease-in-out infinite}
 .map-badge.amber .dot{background:#fbbf24}
-.map-badge.blue .dot{background:#2563eb}
 .map-badge.dark{background:rgba(30,41,59,.95)}
 .map-badge.dark .dot{background:#fde68a}
 .map-badge[hidden]{display:none}
+
+.trace-label{position:absolute;transform:translate(-50%,-50%);pointer-events:none;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(6px);padding:5px 11px;border-radius:99px;
+  box-shadow:0 2px 8px rgba(16,24,40,.14),0 0 0 1px rgba(16,24,40,.05);
+  font-size:.72rem;font-weight:700;letter-spacing:-.005em;color:var(--text);
+  white-space:nowrap;user-select:none;z-index:500}
+.trace-label .tl-name{display:block}
+.trace-label .tl-count{display:block;font-size:.62rem;font-weight:600;
+  color:var(--text-faint);margin-top:1px;letter-spacing:.02em}
+.trace-label.small{font-size:.65rem;padding:4px 9px}
+.trace-label.small .tl-count{font-size:.58rem}
 
 #panFab{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
   display:flex;align-items:center;gap:8px;
@@ -218,10 +240,8 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   min-height:var(--tap-min);touch-action:manipulation}
 #panFab:hover{background:#0f172a}
 #panFab.active{background:#f59e0b;color:#1c1917;box-shadow:0 4px 18px rgba(245,158,11,.5)}
-#panFab.active:hover{background:#d97706}
 #panFab[hidden]{display:none}
 
-/* ---------------- TOASTS ---------------- */
 #toasts{position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;
   flex-direction:column;align-items:center;gap:8px;z-index:2000;pointer-events:none;
   max-width:calc(100vw - 24px)}
@@ -235,7 +255,6 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 @keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes toastOut{to{opacity:0;transform:translateY(-10px) scale(.96)}}
 
-/* ---------------- MODAL ---------------- */
 .modal-root{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;
   padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 .modal-root[hidden]{display:none}
@@ -247,33 +266,40 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   max-height:calc(100dvh - 40px);overflow-y:auto}
 .modal-title{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;color:var(--text);
   margin-bottom:10px}
-.modal-msg{font-size:.86rem;color:var(--text-dim);line-height:1.55;margin-bottom:16px;
-  white-space:pre-line}
-.modal-input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
+.modal-msg{font-size:.86rem;color:var(--text-dim);line-height:1.55;margin-bottom:16px;white-space:pre-line}
+.modal-input,.modal-textarea{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
   font-family:inherit;font-size:16px;font-weight:600;color:var(--text);background:var(--surface);
-  outline:none;margin-bottom:16px;transition:border-color .14s,box-shadow .14s}
-.modal-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+  outline:none;margin-bottom:16px;transition:border-color .14s,box-shadow .14s;resize:vertical}
+.modal-textarea{font-size:.86rem;font-weight:500;min-height:80px;line-height:1.5}
+.modal-input:focus,.modal-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
 .modal-actions{display:flex;gap:10px}
 .modal-actions .btn{flex:1}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
 
-/* ---------------- MOBILE ---------------- */
 @media (max-width:768px){
   body{flex-direction:column}
-  #mapWrap{width:100%;height:55vh;height:55dvh;flex:none;order:1}
+  #mapWrap{width:100%;height:auto;flex:1;order:1;min-height:20dvh}
   #sidebar{
-    width:100%;height:45vh;height:45dvh;order:2;
+    width:100%;height:var(--sheet-height);order:2;flex-shrink:0;
     border-right:none;border-top:1px solid var(--border);
     border-radius:20px 20px 0 0;margin-top:-20px;
     box-shadow:0 -4px 20px rgba(16,24,40,.14);
     position:relative;z-index:20;
-    padding-bottom:env(safe-area-inset-bottom)
+    padding-bottom:env(safe-area-inset-bottom);
+    transition:height .28s cubic-bezier(.34,1.4,.64,1);
+    touch-action:pan-y;
   }
-  #sidebar::before{
+  #sidebar.dragging{transition:none}
+  .sheet-handle{
+    display:block;padding:10px 0 6px;cursor:grab;flex-shrink:0;
+    touch-action:none;
+  }
+  .sheet-handle::before{
     content:"";display:block;width:44px;height:5px;border-radius:99px;
-    background:#cbd5e1;margin:8px auto 0;flex-shrink:0;
+    background:#cbd5e1;margin:0 auto;
   }
+  .sheet-handle:active{cursor:grabbing}
   .brand{padding:6px 16px 12px}
   .brand-logo{width:36px;height:36px}
   .brand h1{font-size:.98rem}
@@ -282,8 +308,12 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   #panFab{bottom:calc(24px + env(safe-area-inset-bottom));padding:13px 22px;font-size:.88rem}
   #toasts{top:calc(12px + env(safe-area-inset-top))}
   .modal-card{margin-bottom:auto;margin-top:auto}
-  .group-head{padding:13px 12px}
-  .subgroup-head{padding:10px 10px}
+  .group-head{padding:12px 10px 12px 12px}
+  .subgroup-head{padding:9px 8px 9px 10px}
+}
+
+@media (min-width:769px){
+  .sheet-handle{display:none}
 }
 
 @media (max-width:480px){
@@ -296,6 +326,8 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 <body>
 
 <aside id="sidebar">
+  <div class="sheet-handle" id="sheetHandle"></div>
+
   <div class="brand">
     <div class="brand-logo" aria-hidden="true">
       <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
@@ -308,11 +340,7 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
             <rect width="64" height="64" rx="14"/>
           </clipPath>
         </defs>
-
-        <!-- Rounded square background -->
         <rect width="64" height="64" rx="14" fill="url(#tmGrad)"/>
-
-        <!-- Subtle map-grid lines, clipped to the rounded square -->
         <g clip-path="url(#tmClip)" stroke="#ffffff" stroke-opacity="0.13" stroke-width="1">
           <line x1="0" y1="16" x2="64" y2="16"/>
           <line x1="0" y1="32" x2="64" y2="32"/>
@@ -321,20 +349,10 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
           <line x1="32" y1="0" x2="32" y2="64"/>
           <line x1="48" y1="0" x2="48" y2="64"/>
         </g>
-
-        <!-- Slight inner highlight at top -->
-        <rect x="0" y="0" width="64" height="64" rx="14"
-              fill="url(#tmGrad)" opacity="0"/>
-
-        <!-- "TM" monogram -->
-        <text x="32" y="44" text-anchor="middle"
-              font-family="Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-              font-size="28" font-weight="800" fill="#ffffff"
-              letter-spacing="-1.2">TM</text>
-
-        <!-- Tiny location-pin accent in the corner -->
-        <circle cx="50" cy="14" r="4.5" fill="#ffffff"/>
-        <circle cx="50" cy="14" r="1.8" fill="#2563eb"/>
+        <path d="M14 46V22l18 14 18-14v24" stroke="white" stroke-width="4.5" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="48" cy="16" r="5" fill="#ffffff"/>
+        <circle cx="48" cy="16" r="2" fill="#2563eb"/>
       </svg>
     </div>
     <div>
@@ -346,10 +364,10 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   <div class="section" style="padding-bottom:14px">
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="goToCurrentGPS()" style="flex:2">
-        <span>📍</span> My location
+        <span class="ic" id="ic-loc"></span> My location
       </button>
       <button class="btn btn-ghost" id="refreshBtn" onclick="manualRefresh(this)" style="flex:1">
-        <span>🔄</span> Refresh
+        <span class="ic" id="ic-refresh"></span> Refresh
       </button>
     </div>
   </div>
@@ -362,6 +380,12 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
       <input type="text" id="editTraceNameInput" maxlength="120" autocomplete="off">
     </div>
 
+    <div class="field">
+      <label for="editTraceNotesInput">Notes <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-faint)">(optional)</span></label>
+      <textarea id="editTraceNotesInput" maxlength="600" rows="3"
+        placeholder="e.g. Boundary approved on 2026-01-15 by Barangay Captain"></textarea>
+    </div>
+
     <div class="mode-bar blue">
       <span class="dot"></span>
       <span class="txt" id="editHintText">Drag dots · tap edge to add · long-press dot to remove</span>
@@ -369,19 +393,21 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 
     <div class="btn-row" style="margin-top:10px">
       <button class="btn btn-ghost" onclick="cancelEditingTrace()">Cancel</button>
-      <button class="btn btn-green" id="saveEditBtn" onclick="saveEditedTrace(this)">💾 Save</button>
+      <button class="btn btn-green" id="saveEditBtn" onclick="saveEditedTrace(this)">
+        <span class="ic" id="ic-save-edit"></span> Save
+      </button>
     </div>
   </div>
 
   <div class="section">
     <div class="sec-head"><span>Drop pins</span></div>
     <div class="chips" id="pinTypeChips">
-      <button class="chip active" data-type="House"><span class="emoji">🏠</span>House</button>
-      <button class="chip" data-type="Store"><span class="emoji">🛒</span>Store</button>
-      <button class="chip" data-type="Landmark"><span class="emoji">📍</span>Landmark</button>
+      <button class="chip active" data-type="House"><span class="emoji-ic" data-ic="home"></span>House</button>
+      <button class="chip" data-type="Store"><span class="emoji-ic" data-ic="store"></span>Store</button>
+      <button class="chip" data-type="Landmark"><span class="emoji-ic" data-ic="landmark"></span>Landmark</button>
     </div>
     <button id="pinModeBtn" class="btn btn-primary" onclick="togglePinMode()">
-      <span>＋</span> Start adding pins
+      <span class="ic" id="ic-plus-pin"></span> Start adding pins
     </button>
     <div id="pinActiveControls" hidden>
       <div class="mode-bar">
@@ -389,12 +415,20 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
         <span class="txt" id="pinCountText">Tap inside a traced area to drop a pin</span>
       </div>
       <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-amber" onclick="undoLastPin()">↩ Undo</button>
-        <button class="btn btn-amber" id="panBtnPin" onclick="togglePanMode()">✋ Pan</button>
-        <button class="btn btn-danger" onclick="cancelPinMode()">✕ Cancel</button>
+        <button class="btn btn-amber" onclick="undoLastPin()">
+          <span class="ic" id="ic-undo-pin"></span> Undo
+        </button>
+        <button class="btn btn-amber" id="panBtnPin" onclick="togglePanMode()">
+          <span class="ic" id="ic-pan-pin"></span> Pan
+        </button>
+        <button class="btn btn-danger" onclick="cancelPinMode()">
+          <span class="ic" id="ic-x-pin"></span> Cancel
+        </button>
       </div>
       <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-green" id="savePinsBtn" onclick="finishPinning(this)">💾 Save pins</button>
+        <button class="btn btn-green" id="savePinsBtn" onclick="finishPinning(this)">
+          <span class="ic" id="ic-save-pin"></span> Save pins
+        </button>
       </div>
     </div>
   </div>
@@ -402,7 +436,7 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   <div class="section">
     <div class="sec-head"><span>Draw traces</span></div>
     <button id="traceBtn" class="btn btn-ghost" onclick="toggleTracing()">
-      <span>✏️</span> Start manual tracing
+      <span class="ic" id="ic-pencil"></span> Start manual tracing
     </button>
     <div id="traceActiveControls" hidden>
       <div class="mode-bar amber">
@@ -410,16 +444,24 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
         <span class="txt" id="traceCountText">Tap the map to draw a path</span>
       </div>
       <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-amber" onclick="undoLastTracePoint()">↩ Undo</button>
-        <button class="btn btn-amber" id="panBtnTrace" onclick="togglePanMode()">✋ Pan</button>
-        <button class="btn btn-danger" onclick="cancelTracing()">✕ Cancel</button>
+        <button class="btn btn-amber" onclick="undoLastTracePoint()">
+          <span class="ic" id="ic-undo-tr"></span> Undo
+        </button>
+        <button class="btn btn-amber" id="panBtnTrace" onclick="togglePanMode()">
+          <span class="ic" id="ic-pan-tr"></span> Pan
+        </button>
+        <button class="btn btn-danger" onclick="cancelTracing()">
+          <span class="ic" id="ic-x-tr"></span> Cancel
+        </button>
       </div>
       <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-green" id="saveTraceBtn" onclick="finishTracing(this)">💾 Save trace</button>
+        <button class="btn btn-green" id="saveTraceBtn" onclick="finishTracing(this)">
+          <span class="ic" id="ic-save-tr"></span> Save trace
+        </button>
       </div>
-      <p style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.55">
+      <p id="traceHintText" style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.55">
         • <b>Hilahin ang dilaw na dot</b> para itama ang posisyon<br>
-        • I-tap ang <b>✋ Pan</b> para i-drag ang mapa
+        • I-tap ang <b>Pan</b> para i-drag ang mapa
       </p>
     </div>
   </div>
@@ -430,7 +472,7 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
       <span class="count" id="recordCount">0</span>
     </div>
     <div id="listContainer">
-      <div class="empty"><span class="big">⏳</span>Loading saved items…</div>
+      <div class="empty"><span class="big-ic" data-ic="map"></span>Loading saved items…</div>
     </div>
   </div>
 </aside>
@@ -441,7 +483,7 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
     <span class="dot"></span><span id="mapBadgeText"></span>
   </div>
   <button id="panFab" hidden onclick="togglePanMode()">
-    <span id="panFabIcon">✋</span>
+    <span id="panFabIcon"></span>
     <span id="panFabText">Pan map</span>
   </button>
 </div>
@@ -452,6 +494,7 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
     <h3 class="modal-title" id="modalTitle"></h3>
     <p class="modal-msg" id="modalMsg"></p>
     <input class="modal-input" id="modalInput" type="text" hidden autocomplete="off">
+    <textarea class="modal-textarea" id="modalTextarea" hidden></textarea>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="modalCancel">Cancel</button>
       <button class="btn btn-primary" id="modalOk">OK</button>
@@ -465,36 +508,115 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUZYpZJJ2rOPpKJx539Dxa8VsLtZC_tTs&libraries=geometry&callback=initMap"></script>
 
 <script>
+/* ============================================================ ICONS */
+const ICON_PATHS = {
+  home:'M3 11l9-8 9 8v10a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2z',
+  store:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0',
+  landmark:'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
+  plus:'M12 5v14M5 12h14',
+  edit:'M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z',
+  trash:'M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6',
+  save:'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8',
+  undo:'M3 7v6h6M3 13a9 9 0 1 0 3-7.7L3 8',
+  cancel:'M18 6L6 18M6 6l12 12',
+  refresh:'M23 4v6h-6M1 20v-6h6M20.49 9A9 9 0 0 0 5.64 5.64L1 10M3.51 15a9 9 0 0 0 14.85 3.36L23 14',
+  location:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+  pan:'M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10V5a2 2 0 0 0-4 0v9M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34L2.05 15.9a2 2 0 0 1 2.83-2.82L7 15',
+  pencil:'M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z',
+  pin:'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
+  map:'M1 6v16l7-4 8 4 7-4V2l-7 4-8-4z M8 2v16M16 6v16',
+  target:'M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M16 21h3a2 2 0 0 0 2-2v-3M8 21H5a2 2 0 0 1-2-2v-3',
+  arrowRight:'M5 12h14M13 5l7 7-7 7'
+};
+
+function svgIcon(name, size = 16, strokeWidth = 2){
+  const path = ICON_PATHS[name] || '';
+  const parts = path.split(' M ').map((p, i) => i === 0 ? p : 'M ' + p);
+  const d = parts.map(p => `<path d="${p.trim()}"/>`).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+}
+
+function renderStaticIcons(){
+  const map = {
+    'ic-loc': 'location', 'ic-refresh': 'refresh',
+    'ic-save-edit': 'save',
+    'ic-plus-pin': 'plus', 'ic-undo-pin': 'undo', 'ic-pan-pin': 'pan',
+    'ic-x-pin': 'cancel', 'ic-save-pin': 'save',
+    'ic-pencil': 'pencil', 'ic-undo-tr': 'undo', 'ic-pan-tr': 'pan',
+    'ic-x-tr': 'cancel', 'ic-save-tr': 'save'
+  };
+  Object.entries(map).forEach(([id, name]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = svgIcon(name, 16);
+  });
+  document.querySelectorAll('[data-ic]').forEach(el => {
+    const name = el.getAttribute('data-ic');
+    const size = el.classList.contains('big-ic') ? 40 : 20;
+    el.innerHTML = svgIcon(name, size, name === 'map' ? 1.5 : 2);
+  });
+  const pf = document.getElementById('panFabIcon');
+  if (pf) pf.innerHTML = svgIcon('pan', 16);
+}
+
+/* ============================================================ PALETTE */
+const PALETTE = [
+  '#2563eb', '#059669', '#d97706', '#e11d48', '#7c3aed',
+  '#0891b2', '#65a30d', '#ea580c', '#c026d3', '#475569'
+];
+function pickNextPaletteColor(existingTraces){
+  const used = new Set();
+  existingTraces.forEach(t => {
+    try {
+      const p = JSON.parse(t.item.coordinates);
+      if (p && p.color) used.add(p.color.toUpperCase());
+    } catch(e){}
+  });
+  for (const c of PALETTE){
+    if (!used.has(c.toUpperCase())) return c;
+  }
+  return PALETTE[used.size % PALETTE.length];
+}
+
 /* ============================================================ CONFIG */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD9x7ztrDySel0ERqDRS558dRZVVXsGMJS37c2pBOYC3DolP96R9F2M3LfpJXycW9rlA/exec";
 const TRACE_RADIUS_METERS = 300;
-
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const POINT_SCALE  = IS_TOUCH ? 11 : 7;
 const VERTEX_SCALE = IS_TOUCH ? 12 : 8;
 const DRAG_THRESHOLD_PX = 12;
+const DRAFT_KEY = 'territory-mapper-draft-v1';
 
 const MAP_STYLE = [
-  {elementType:"geometry",stylers:[{color:"#f5f7fa"}]},
+  {elementType:"geometry",stylers:[{color:"#f1f4f8"}]},
   {elementType:"labels.icon",stylers:[{visibility:"off"}]},
-  {elementType:"labels.text.fill",stylers:[{color:"#8a94a6"}]},
+  {elementType:"labels.text.fill",stylers:[{color:"#7a8696"}]},
   {elementType:"labels.text.stroke",stylers:[{color:"#ffffff"}]},
-  {featureType:"administrative",elementType:"geometry",stylers:[{color:"#dfe4ec"}]},
-  {featureType:"poi",elementType:"geometry",stylers:[{color:"#e9edf3"}]},
-  {featureType:"poi.park",elementType:"geometry",stylers:[{color:"#dcefdd"}]},
+  {featureType:"administrative",elementType:"geometry",stylers:[{color:"#d5dce6"}]},
+  {featureType:"administrative.country",elementType:"geometry.stroke",stylers:[{color:"#c3ccd9"}]},
+  {featureType:"administrative.locality",elementType:"labels.text.fill",stylers:[{color:"#6b7280"}]},
+  {featureType:"poi",elementType:"geometry",stylers:[{color:"#e3e8ee"}]},
+  {featureType:"poi",elementType:"labels",stylers:[{visibility:"off"}]},
+  {featureType:"poi.park",elementType:"geometry",stylers:[{color:"#dcefdb"}]},
   {featureType:"road",elementType:"geometry",stylers:[{color:"#ffffff"}]},
-  {featureType:"road",elementType:"labels.text.fill",stylers:[{color:"#9aa3b0"}]},
-  {featureType:"road.highway",elementType:"geometry",stylers:[{color:"#f0d9b5"}]},
+  {featureType:"road",elementType:"labels.text.fill",stylers:[{color:"#8a94a4"}]},
+  {featureType:"road.arterial",elementType:"geometry",stylers:[{color:"#ffffff"}]},
+  {featureType:"road.highway",elementType:"geometry",stylers:[{color:"#f4e0b6"}]},
+  {featureType:"road.highway",elementType:"geometry.stroke",stylers:[{color:"#e4c992"}]},
+  {featureType:"road.local",elementType:"geometry",stylers:[{color:"#ffffff"}]},
   {featureType:"transit",stylers:[{visibility:"off"}]},
-  {featureType:"water",elementType:"geometry",stylers:[{color:"#c9ddf0"}]}
+  {featureType:"water",elementType:"geometry",stylers:[{color:"#bfdbfe"}]},
+  {featureType:"water",elementType:"labels.text.fill",stylers:[{color:"#7391b0"}]}
 ];
 
 /* ============================================================ STATE */
-let map;
+let map, clusterer;
 let userLocation = { lat: 13.5571, lng: 123.3650 };
 let isTracing = false;
 let pendingParentId = null;
+let pendingParentTrace = null;
+let subTraceParentOverlay = null;
 let currentTracePoints = [];
+let undoStack = [];
 let activePolyline = null;
 let activePolygon = null;
 let tempMarkers = [];
@@ -504,8 +626,11 @@ let tempPinMarkers = [];
 let allRecords = [];
 let allTraces = [];
 let drawnOverlays = [];
+let pinMarkerObjects = [];        // { marker, item, pos }
+let traceLabels = [];
 const featureIndex = new Map();
 let lastRecordCount = 0;
+let lastJumpMarker = null;        // pulsing highlight after jump
 
 let isEditing = false;
 let editingTraceItem = null;
@@ -517,36 +642,31 @@ let editingFill = null;
 let panMode = false;
 let markerInteractionLock = false;
 
-/* ============================================================ MODAL SYSTEM */
-let modalResolve = null;
+/* ============================================================ HAPTIC */
+function haptic(ms = 8){
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
 
-function showModal({title = '', message = '', input = null, okText = 'OK', cancelText = 'Cancel'}){
+/* ============================================================ MODAL */
+function showModal({title = '', message = '', input = null, textarea = null, okText = 'OK', cancelText = 'Cancel'}){
   return new Promise(resolve => {
-    modalResolve = resolve;
-    const root  = document.getElementById('modalRoot');
-    const tEl   = document.getElementById('modalTitle');
-    const mEl   = document.getElementById('modalMsg');
-    const iEl   = document.getElementById('modalInput');
+    const root = document.getElementById('modalRoot');
+    const tEl = document.getElementById('modalTitle');
+    const mEl = document.getElementById('modalMsg');
+    const iEl = document.getElementById('modalInput');
+    const aEl = document.getElementById('modalTextarea');
     const okBtn = document.getElementById('modalOk');
     const caBtn = document.getElementById('modalCancel');
 
-    tEl.textContent = title;
-    tEl.hidden = !title;
+    tEl.textContent = title; tEl.hidden = !title;
+    mEl.textContent = message || ''; mEl.hidden = !message;
+    okBtn.textContent = okText; caBtn.textContent = cancelText;
 
-    mEl.textContent = message || '';
-    mEl.hidden = !message;
-
-    okBtn.textContent = okText;
-    caBtn.textContent = cancelText;
-
-    if (input !== null){
-      iEl.hidden = false;
-      iEl.value = input ?? '';
-      iEl.placeholder = '';
-    } else {
-      iEl.hidden = true;
-      iEl.value = '';
-    }
+    const hasInput = input !== null;
+    const hasTextarea = textarea !== null;
+    iEl.hidden = !hasInput; aEl.hidden = !hasTextarea;
+    if (hasInput) iEl.value = input ?? '';
+    if (hasTextarea) aEl.value = textarea ?? '';
 
     root.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -554,17 +674,15 @@ function showModal({title = '', message = '', input = null, okText = 'OK', cance
     const cleanup = () => {
       root.hidden = true;
       document.body.style.overflow = '';
-      okBtn.onclick = null;
-      caBtn.onclick = null;
+      okBtn.onclick = null; caBtn.onclick = null;
       document.getElementById('modalBackdrop').onclick = null;
-      iEl.onkeydown = null;
-      modalResolve = null;
+      iEl.onkeydown = null; aEl.onkeydown = null;
     };
-
     const confirm = () => {
-      const v = input !== null ? iEl.value : true;
-      cleanup();
-      resolve(v);
+      let v = true;
+      if (hasInput) v = { input: iEl.value, textarea: hasTextarea ? aEl.value : null };
+      else if (hasTextarea) v = { textarea: aEl.value };
+      cleanup(); resolve(v);
     };
     const cancel = () => { cleanup(); resolve(null); };
 
@@ -572,44 +690,34 @@ function showModal({title = '', message = '', input = null, okText = 'OK', cance
     caBtn.onclick = cancel;
     document.getElementById('modalBackdrop').onclick = cancel;
 
-    if (input !== null){
-      iEl.onkeydown = (e) => {
-        if (e.key === 'Enter'){ e.preventDefault(); confirm(); }
+    if (hasInput || hasTextarea){
+      const onKey = (e) => {
         if (e.key === 'Escape'){ e.preventDefault(); cancel(); }
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){ e.preventDefault(); confirm(); }
       };
-      setTimeout(() => {
-        iEl.focus();
-        iEl.select?.();
-        const card = iEl.closest('.modal-card');
-        if (card) card.scrollIntoView({ block: 'center' });
-      }, 60);
+      iEl.onkeydown = onKey; aEl.onkeydown = onKey;
+      setTimeout(() => { (hasInput ? iEl : aEl).focus(); iEl.select?.(); }, 60);
     } else {
       setTimeout(() => okBtn.focus(), 60);
     }
   });
 }
-
 function showPrompt({title = '', message = '', defaultValue = '', okText = 'OK', cancelText = 'Cancel'}){
-  return showModal({ title, message, input: defaultValue, okText, cancelText });
+  return showModal({ title, message, input: defaultValue, okText, cancelText })
+    .then(v => v ? v.input : null);
 }
 function showConfirm({title = '', message = '', okText = 'OK', cancelText = 'Cancel'}){
   return showModal({ title, message, input: null, okText, cancelText }).then(v => v !== null);
 }
 
-/* ============================================================ BUTTON BUSY HELPER */
+/* ============================================================ BUSY BUTTON */
 async function withButtonBusy(btn, busyText, fn){
   if (!btn) return await fn();
   if (btn.dataset.busy === '1') return;
-  const originalHTML = btn.innerHTML;
-  btn.dataset.busy = '1';
-  btn.disabled = true;
-  btn.innerHTML = busyText;
+  const orig = btn.innerHTML;
+  btn.dataset.busy = '1'; btn.disabled = true; btn.innerHTML = busyText;
   try { return await fn(); }
-  finally {
-    btn.dataset.busy = '';
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
-  }
+  finally { btn.dataset.busy = ''; btn.disabled = false; btn.innerHTML = orig; }
 }
 
 /* ============================================================ HELPERS */
@@ -618,31 +726,63 @@ function esc(s){
     {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
   ));
 }
-function getRandomColor(){
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) color += letters[Math.floor(Math.random() * 12) + 4];
-  return color;
-}
-function getIconForType(type){
+
+function markerSvgIcon(type){
   const t = (type || "").toLowerCase();
-  if (t.includes("house")){
-    return {
-      url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" height="32" width="32" viewBox="0 0 24 24" fill="#2563eb"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>'),
-      scaledSize:new google.maps.Size(32,32), anchor:new google.maps.Point(16,16)
-    };
-  }
-  if (t.includes("store") || t.includes("shop")){
-    return {
-      url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" height="32" width="32" viewBox="0 0 24 24" fill="#16a34a"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>'),
-      scaledSize:new google.maps.Size(32,32), anchor:new google.maps.Point(16,16)
-    };
-  }
+  let fill = '#dc2626', path = ICON_PATHS.pin;
+  if (t.includes('house')){ fill = '#2563eb'; path = ICON_PATHS.home; }
+  else if (t.includes('store') || t.includes('shop')){ fill = '#16a34a'; path = ICON_PATHS.store; }
+  else { fill = '#dc2626'; path = ICON_PATHS.pin; }
+  const isPin = !t.includes('house') && !t.includes('store') && !t.includes('shop');
+  const d = path.split(' M ').map((p, i) => i === 0 ? p : 'M ' + p)
+    .map(p => `<path d="${p.trim()}" fill="${fill}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">${d}</svg>`;
   return {
-    url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" height="32" width="32" viewBox="0 0 24 24" fill="#dc2626"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'),
-    scaledSize:new google.maps.Size(32,32), anchor:new google.maps.Point(16,32)
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(30, 30),
+    anchor: new google.maps.Point(15, isPin ? 28 : 15)
   };
 }
+
+function pinColorForType(type){
+  const t = (type || '').toLowerCase();
+  if (t.includes('house')) return '#2563eb';
+  if (t.includes('store') || t.includes('shop')) return '#16a34a';
+  if (t.includes('landmark')) return '#dc2626';
+  return '#64748b';
+}
+
+function countPinsByType(pins){
+  const c = { house: 0, store: 0, landmark: 0, other: 0 };
+  pins.forEach(p => {
+    const t = (p.item.type || '').toLowerCase();
+    if (t.includes('house')) c.house++;
+    else if (t.includes('store') || t.includes('shop')) c.store++;
+    else if (t.includes('landmark')) c.landmark++;
+    else c.other++;
+  });
+  return c;
+}
+
+function renderPinSummary(counts, hasDetails, groupKey){
+  const total = counts.house + counts.store + counts.landmark + counts.other;
+  const chips = [];
+  if (counts.house) chips.push(`<span class="pin-chip house">${svgIcon('home', 13, 2.2)}<span>${counts.house}</span></span>`);
+  if (counts.store) chips.push(`<span class="pin-chip store">${svgIcon('store', 13, 2.2)}<span>${counts.store}</span></span>`);
+  if (counts.landmark) chips.push(`<span class="pin-chip landmark">${svgIcon('landmark', 13, 2.2)}<span>${counts.landmark}</span></span>`);
+  if (counts.other) chips.push(`<span class="pin-chip other"><span>${counts.other}</span></span>`);
+
+  if (total === 0){
+    return `<div class="pin-summary"><span class="pin-chip empty">No pins yet</span></div>`;
+  }
+
+  const showBtn = hasDetails
+    ? `<button class="show-pins-btn" data-toggle-pins="${esc(groupKey)}">Show&nbsp;▾</button>`
+    : '';
+
+  return `<div class="pin-summary">${chips.join('')}${showBtn}</div>`;
+}
+
 function distanceToSegmentMeters(p, a, b){
   const R = 6371000, toRad = d => d * Math.PI / 180;
   const latRef = toRad((a.lat + b.lat) / 2);
@@ -692,7 +832,7 @@ function projectPointOnSegment(p, a, b){
   };
 }
 
-/* ============================================================ LONG-PRESS ATTACH */
+/* ============================================================ LONG-PRESS */
 function attachLongPress(marker, onLongPress, duration = 550){
   let timer = null;
   const start = () => {
@@ -700,14 +840,13 @@ function attachLongPress(marker, onLongPress, duration = 550){
     timer = setTimeout(() => { timer = null; onLongPress(); }, duration);
   };
   const cancel = () => { if (timer){ clearTimeout(timer); timer = null; } };
-
   ['mousedown','touchstart'].forEach(ev => google.maps.event.addListener(marker, ev, start));
   ['mouseup','touchend','mouseout','dragstart','drag','dragend'].forEach(ev =>
     google.maps.event.addListener(marker, ev, cancel)
   );
 }
 
-/* ============================================================ RAY-CASTING */
+/* ============================================================ RAY-CAST */
 function pointInPolygonRayCast(lat, lng, coords){
   let inside = false;
   for (let i = 0, j = coords.length - 1; i < coords.length; j = i++){
@@ -724,7 +863,7 @@ function pointInRing_(latLng, coords){
     try {
       const poly = new google.maps.Polygon({ paths: coords, geodesic: true });
       if (google.maps.geometry.poly.containsLocation(latLng, poly)) return true;
-    } catch(e){ /* fall through */ }
+    } catch(e){}
   }
   return pointInPolygonRayCast(latLng.lat(), latLng.lng(), coords);
 }
@@ -755,10 +894,7 @@ function toast(msg, kind = 'info', ms = 2600){
   el.className = 'toast' + (kind !== 'info' ? ' ' + kind : '');
   el.textContent = msg;
   box.appendChild(el);
-  setTimeout(() => {
-    el.classList.add('out');
-    setTimeout(() => el.remove(), 240);
-  }, ms);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 240); }, ms);
 }
 
 /* ============================================================ API */
@@ -770,35 +906,54 @@ async function submitToSheet(payload){
   });
 }
 async function deleteOnServer(id){
-  const url = APPS_SCRIPT_URL + "?action=delete"
-            + "&id=" + encodeURIComponent(id)
-            + "&t=" + Date.now();
+  const url = APPS_SCRIPT_URL + "?action=delete&id=" + encodeURIComponent(id) + "&t=" + Date.now();
   const res = await fetch(url);
   const text = await res.text();
   let json;
-  try { json = JSON.parse(text); }
-  catch(e){ throw new Error("Invalid response from server"); }
+  try { json = JSON.parse(text); } catch(e){ throw new Error("Invalid response from server"); }
   if (!json || json.result !== 'success'){
     throw new Error((json && json.message) || 'Server rejected the request');
   }
   return json;
 }
-
-/* ============================================================ REFRESH WITH RETRY */
 async function refreshUntil(expectedAtLeast, maxAttempts = 6){
   for (let attempt = 1; attempt <= maxAttempts; attempt++){
     await new Promise(r => setTimeout(r, attempt === 1 ? 600 : 900));
     clearOverlays();
     const count = await fetchPlacesFromSheet();
-    console.log(`[refresh] attempt ${attempt} → ${count} records (target: ${expectedAtLeast})`);
     if (typeof count === 'number' && count >= expectedAtLeast) return true;
   }
   return false;
 }
 
-/* ============================================================ GHOST-TAP SUPPRESSION */
-let pointerStart = null;
+/* ============================================================ AUTO-SAVE DRAFT */
+function saveDraft(){
+  if (!isTracing || currentTracePoints.length === 0){ clearDraft(); return; }
+  try {
+    const data = {
+      points: currentTracePoints.map(pt => ({
+        lat: typeof pt.lat === 'function' ? pt.lat() : pt.lat,
+        lng: typeof pt.lng === 'function' ? pt.lng() : pt.lng
+      })),
+      pendingParentId: pendingParentId,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+  } catch(e){}
+}
+function clearDraft(){ try { localStorage.removeItem(DRAFT_KEY); } catch(e){} }
+function loadDraft(){
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (Date.now() - (d.savedAt || 0) > 6 * 3600 * 1000){ clearDraft(); return null; }
+    return d;
+  } catch(e){ return null; }
+}
 
+/* ============================================================ GHOST-TAP */
+let pointerStart = null;
 function installPointerTracking(){
   const mapEl = document.getElementById('map');
   const down = (x, y) => { pointerStart = { x, y, t: Date.now() }; };
@@ -808,23 +963,47 @@ function installPointerTracking(){
       pointerStart.moved = true;
     }
   };
-
-  mapEl.addEventListener('touchstart', e => {
-    const t = e.touches[0]; if (t) down(t.clientX, t.clientY);
-  }, { passive: true });
-  mapEl.addEventListener('touchmove', e => {
-    const t = e.touches[0]; if (t) move(t.clientX, t.clientY);
-  }, { passive: true });
-
+  mapEl.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) down(t.clientX, t.clientY); }, { passive: true });
+  mapEl.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
   mapEl.addEventListener('mousedown', e => down(e.clientX, e.clientY));
   mapEl.addEventListener('mousemove', e => move(e.clientX, e.clientY));
 }
-
 function shouldIgnoreMapClick(){
   if (markerInteractionLock) return true;
   if (!pointerStart) return false;
   if (pointerStart.moved) return true;
   return false;
+}
+
+/* ============================================================ TRACE LABELS */
+function createTraceLabel(trace, pinCount){
+  let lat = 0, lng = 0;
+  trace.coords.forEach(c => { lat += Number(c.lat); lng += Number(c.lng); });
+  const pos = new google.maps.LatLng(lat / trace.coords.length, lng / trace.coords.length);
+
+  const div = document.createElement('div');
+  div.className = 'trace-label' + (trace.parentId ? ' small' : '');
+  div.innerHTML = `<span class="tl-name">${esc(trace.item.title)}</span>` +
+                  `<span class="tl-count">${pinCount} pin${pinCount === 1 ? '' : 's'}</span>`;
+
+  const overlay = new google.maps.OverlayView();
+  overlay.onAdd = function(){ this.getPanes().overlayMouseTarget.appendChild(div); };
+  overlay.draw = function(){
+    const proj = this.getProjection();
+    if (!proj) return;
+    const px = proj.fromLatLngToDivPixel(pos);
+    div.style.left = px.x + 'px';
+    div.style.top = px.y + 'px';
+  };
+  overlay.onRemove = function(){ if (div.parentNode) div.parentNode.removeChild(div); };
+  overlay.setMap(map);
+
+  return { overlay, div, position: pos, traceId: String(trace.item.id) };
+}
+function updateTraceLabelVisibility(){
+  if (!map) return;
+  const z = map.getZoom();
+  traceLabels.forEach(l => { l.div.style.display = z >= 12 ? '' : 'none'; });
 }
 
 /* ============================================================ MAP */
@@ -849,6 +1028,8 @@ function initMap(){
     else if (isPinning) addTempPin(e.latLng);
   });
 
+  map.addListener("zoom_changed", updateTraceLabelVisibility);
+
   if (navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -868,7 +1049,30 @@ function initMap(){
     );
   }
 
-  fetchPlacesFromSheet();
+  fetchPlacesFromSheet().then(() => {
+    const draft = loadDraft();
+    if (draft && draft.points && draft.points.length > 0){
+      setTimeout(() => {
+        showConfirm({
+          title: 'Resume unfinished trace?',
+          message: `May nakita kaming ${draft.points.length} unsaved points mula sa nakaraang session. Gusto mo bang ituloy?`,
+          okText: 'Resume',
+          cancelText: 'Discard'
+        }).then(ok => {
+          if (ok){
+            startTracing(draft.pendingParentId || null, true);
+            draft.points.forEach(p => {
+              const ll = new google.maps.LatLng(p.lat, p.lng);
+              addTracePoint(ll, true);
+            });
+            toast('Draft restored', 'success');
+          } else {
+            clearDraft();
+          }
+        });
+      }, 400);
+    }
+  });
 }
 
 function lockMapForMarkerDrag(){
@@ -882,65 +1086,99 @@ function unlockMapAfterMarkerDrag(){
   }, 180);
 }
 
+/* ============================================================ JUMP TO PIN */
+function jumpToPin(pinId){
+  const entry = pinMarkerObjects.find(e => String(e.item.id) === String(pinId));
+  if (!entry){ toast("Pin location not found", "error"); return; }
+
+  // Pan + zoom
+  map.panTo(entry.pos);
+  const targetZoom = Math.max(17, map.getZoom());
+  map.setZoom(targetZoom);
+
+  // Pulse highlight
+  if (lastJumpMarker){
+    lastJumpMarker.setMap(null);
+    lastJumpMarker = null;
+  }
+
+  lastJumpMarker = new google.maps.Marker({
+    position: entry.pos,
+    map,
+    zIndex: 2000,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 16,
+      fillColor: pinColorForType(entry.item.type),
+      fillOpacity: 0.28,
+      strokeColor: pinColorForType(entry.item.type),
+      strokeWeight: 3,
+      strokeOpacity: 0.9
+    }
+  });
+
+  // Fade out after 2.5 seconds
+  setTimeout(() => {
+    if (lastJumpMarker){
+      lastJumpMarker.setMap(null);
+      lastJumpMarker = null;
+    }
+  }, 2500);
+
+  haptic(12);
+}
+
 /* ============================================================ PAN MODE */
 function togglePanMode(){
   if (!isTracing && !isPinning){
-    toast("Start trace or pin mode first to use pan mode", "info", 2400);
-    return;
+    toast("Start trace or pin mode first to use pan mode", "info", 2400); return;
   }
   panMode = !panMode;
   updatePanUI();
   applyMarkerDraggability();
+  haptic(10);
 
   if (panMode){
-    toast("✋ Pan mode — drag the map · tap Draw to resume", "info", 3000);
-    showMapBadge("✋ Pan mode — drag the map freely", isTracing);
+    toast("Pan mode — drag the map · tap Draw to resume", "info", 3000);
+    showMapBadge("Pan mode — drag the map freely", isTracing);
   } else {
-    toast("✏️ Drawing resumed", "success", 2000);
+    toast("Drawing resumed", "success", 2000);
     updateMapBadgeForCurrentMode();
   }
 }
-
 function applyMarkerDraggability(){
   const shouldBeDraggable = isTracing && !panMode;
   tempMarkers.forEach(m => m.setDraggable(shouldBeDraggable));
 }
-
 function updatePanUI(){
   const inMode = isTracing || isPinning;
-
   const fab = document.getElementById('panFab');
   const fabIcon = document.getElementById('panFabIcon');
   const fabText = document.getElementById('panFabText');
   fab.hidden = !inMode;
   if (inMode){
     fab.classList.toggle('active', panMode);
-    fabIcon.textContent = panMode ? "✏️" : "✋";
+    fabIcon.innerHTML = svgIcon(panMode ? 'pencil' : 'pan', 16);
     fabText.textContent = panMode ? "Draw" : "Pan map";
   }
-
   const btnTrace = document.getElementById('panBtnTrace');
-  const btnPin   = document.getElementById('panBtnPin');
+  const btnPin = document.getElementById('panBtnPin');
   [btnTrace, btnPin].forEach(b => {
     if (!b) return;
     b.classList.toggle('btn-dark', panMode);
     b.classList.toggle('btn-amber', !panMode);
-    b.textContent = panMode ? "✏️ Draw" : "✋ Pan";
+    b.innerHTML = `<span class="ic">${svgIcon(panMode ? 'pencil' : 'pan', 16)}</span> ${panMode ? 'Draw' : 'Pan'}`;
   });
-
   const traceBar = document.querySelector('#traceActiveControls .mode-bar');
-  const pinBar   = document.querySelector('#pinActiveControls .mode-bar');
+  const pinBar = document.querySelector('#pinActiveControls .mode-bar');
   if (traceBar) traceBar.classList.toggle('dark', panMode);
-  if (pinBar)   pinBar.classList.toggle('dark', panMode);
-
+  if (pinBar) pinBar.classList.toggle('dark', panMode);
   if (isTracing) updateTraceControls();
 }
-
 function updateMapBadgeForCurrentMode(){
   if (isTracing){
-    if (pendingParentId){
-      const p = allTraces.find(t => String(t.item.id) === pendingParentId);
-      showMapBadge(`Sub-trace of "${p ? p.item.title : '?'}" — tap the map`, true);
+    if (pendingParentTrace){
+      showMapBadge(`Inside "${pendingParentTrace.item.title}" — tap to add points`, true);
     } else {
       showMapBadge("Trace mode — tap the map to draw", true);
     }
@@ -955,6 +1193,7 @@ document.getElementById('pinTypeChips').addEventListener('click', (e) => {
   if (!chip) return;
   document.querySelectorAll('#pinTypeChips .chip').forEach(c => c.classList.remove('active'));
   chip.classList.add('active');
+  haptic(6);
 });
 function selectedPinType(){
   const active = document.querySelector('#pinTypeChips .chip.active');
@@ -975,8 +1214,8 @@ function togglePinMode(){
   document.getElementById("pinActiveControls").hidden = false;
   updatePanUI();
   showMapBadge("Pin mode — tap inside a traced area");
+  haptic(12);
 }
-
 function addTempPin(latLng){
   if (allTraces.length === 0){
     toast("No traces loaded yet — try refreshing.", "error", 3200); return;
@@ -994,47 +1233,41 @@ function addTempPin(latLng){
   });
   const marker = new google.maps.Marker({
     position: latLng, map, title: selectedType,
-    icon: getIconForType(selectedType),
+    icon: markerSvgIcon(selectedType),
     animation: google.maps.Animation.DROP
   });
   tempPinMarkers.push(marker);
-
+  haptic(8);
   const n = currentTempPins.length;
   document.getElementById("pinCountText").textContent =
     `${n} pin${n > 1 ? 's' : ''} ready · inside "${containing.item.title}"`;
 }
-
 function undoLastPin(){
   if (!currentTempPins.length) return;
   currentTempPins.pop();
   const m = tempPinMarkers.pop();
   if (m) m.setMap(null);
+  haptic(6);
   document.getElementById("pinCountText").textContent = currentTempPins.length
     ? `${currentTempPins.length} pin${currentTempPins.length > 1 ? 's' : ''} ready`
     : 'Tap inside a traced area to drop a pin';
 }
-
 async function cancelPinMode(){
   if (!isPinning && !currentTempPins.length) return;
   const n = currentTempPins.length;
-
   const ok = await showConfirm({
     title: n > 0 ? 'Discard unsaved pins?' : 'Cancel pin mode?',
-    message: n > 0
-      ? `${n} unsaved pin${n > 1 ? 's' : ''} will be thrown away.`
-      : 'Nothing has been added yet.',
+    message: n > 0 ? `${n} unsaved pin${n > 1 ? 's' : ''} will be thrown away.` : 'Nothing has been added yet.',
     okText: n > 0 ? 'Discard' : 'Yes, cancel',
     cancelText: 'Keep going'
   });
   if (!ok) return;
-
   resetPinMode();
   toast(n > 0 ? `Discarded ${n} pin(s)` : "Pin mode cancelled", "info", 2200);
 }
-
 async function finishPinning(btn){
   if (!currentTempPins.length){ toast("Drop at least one pin first", "error"); return; }
-  await withButtonBusy(btn, "⏳ Saving…", async () => {
+  await withButtonBusy(btn, "Saving…", async () => {
     const pins = currentTempPins.slice();
     isPinning = false;
     const n = pins.length;
@@ -1045,15 +1278,15 @@ async function finishPinning(btn){
       try { await submitToSheet(pin); }
       catch(e){ console.error("Network error:", pin, e); failed++; }
     }
+    haptic(20);
     if (failed > 0) toast(`${failed} of ${n} failed to send.`, "error", 5000);
     else toast(`${n} pin(s) submitted — refreshing…`, "success");
     resetPinMode();
     const ok = await refreshUntil(expectedTotal);
-    toast(ok ? `Synced — ${n} new pin(s)` : "Saved, but list not updated. Tap 🔄 Refresh.",
+    toast(ok ? `Synced — ${n} new pin(s)` : "Saved, but list not updated. Tap Refresh.",
           ok ? "success" : "error", 5000);
   });
 }
-
 function resetPinMode(){
   isPinning = false; currentTempPins = [];
   panMode = false;
@@ -1067,19 +1300,28 @@ function resetPinMode(){
 }
 
 /* ============================================================ TRACE MODE */
-function toggleTracing(){
-  startTracing(null);
-}
+function toggleTracing(){ startTracing(null); }
 
-function startTracing(parentId){
+function startTracing(parentId, silent){
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
   if (isPinning){ toast("Finish pinning session first", "error"); return; }
   if (isTracing) return;
 
   pendingParentId = parentId ? String(parentId) : null;
+  pendingParentTrace = pendingParentId
+    ? (allTraces.find(t => String(t.item.id) === pendingParentId) || null)
+    : null;
+
+  if (pendingParentId && (!pendingParentTrace || pendingParentTrace.coords.length < 3)){
+    toast("Parent must be a closed shape with 3+ points.", "error", 4000);
+    pendingParentId = null; pendingParentTrace = null;
+    return;
+  }
+
   isTracing = true;
   panMode = false;
   currentTracePoints = [];
+  undoStack = [];
 
   document.getElementById("traceBtn").hidden = true;
   document.getElementById("pinModeBtn").disabled = true;
@@ -1089,229 +1331,240 @@ function startTracing(parentId){
   updateTraceControls();
   updatePanUI();
 
-  if (pendingParentId){
-    const p = allTraces.find(t => String(t.item.id) === pendingParentId);
-    showMapBadge(`Sub-trace of "${p ? p.item.title : '?'}" — tap the map`, true);
-    toast(`Drawing sub-trace inside "${p ? p.item.title : '?'}"`, "info", 3200);
+  if (pendingParentTrace){
+    fitBoundsToCoords(pendingParentTrace.coords);
+    showSubTraceParentOverlay(pendingParentTrace);
+    const hint = document.getElementById('traceHintText');
+    if (hint){
+      hint.innerHTML =
+        `• <b>Restricted area:</b> "${esc(pendingParentTrace.item.title)}"<br>` +
+        `• Ang bawat point ay dapat nasa <b>loob</b> ng parent<br>` +
+        `• I-tap ang <b>Pan</b> para i-drag ang mapa`;
+    }
+    showMapBadge(`Sub-trace inside "${pendingParentTrace.item.title}" — stay inside`, true);
+    if (!silent) toast(`Drawing inside "${pendingParentTrace.item.title}"`, "info", 4200);
   } else {
+    const hint = document.getElementById('traceHintText');
+    if (hint){
+      hint.innerHTML =
+        `• <b>Hilahin ang dilaw na dot</b> para itama ang posisyon<br>` +
+        `• I-tap ang <b>Pan</b> para i-drag ang mapa`;
+    }
     showMapBadge("Trace mode — tap the map to draw", true);
   }
+  haptic(12);
 }
-
+function showSubTraceParentOverlay(parentTrace){
+  clearSubTraceParentOverlay();
+  subTraceParentOverlay = new google.maps.Polygon({
+    paths: parentTrace.coords, geodesic: true,
+    strokeColor: "#1d4ed8", strokeOpacity: 0.95, strokeWeight: 5,
+    fillColor: "#1d4ed8", fillOpacity: 0.10,
+    clickable: false, zIndex: 5, map
+  });
+}
+function clearSubTraceParentOverlay(){
+  if (subTraceParentOverlay){ subTraceParentOverlay.setMap(null); subTraceParentOverlay = null; }
+}
 async function cancelTracing(){
   if (!isTracing) return;
-
   const n = currentTracePoints.length;
-  const isSub = !!pendingParentId;
-
+  const isSub = !!pendingParentTrace;
   const ok = await showConfirm({
     title: `Discard this ${isSub ? 'sub-trace' : 'trace'}?`,
-    message: n > 0
-      ? `${n} point${n > 1 ? 's' : ''} will be thrown away.`
-      : 'Nothing has been drawn yet.',
-    okText: 'Discard',
-    cancelText: 'Keep drawing'
+    message: n > 0 ? `${n} point${n > 1 ? 's' : ''} will be thrown away.` : 'Nothing has been drawn yet.',
+    okText: 'Discard', cancelText: 'Keep drawing'
   });
   if (!ok) return;
-
-  const parentTitle = isSub
-    ? (allTraces.find(t => String(t.item.id) === pendingParentId) || {item:{title:'?'}}).item.title
-    : null;
-
+  const parentTitle = isSub ? pendingParentTrace.item.title : null;
   resetTraceMode();
-  toast(parentTitle
-        ? `Sub-trace of "${parentTitle}" cancelled`
-        : "Trace cancelled", "info", 2200);
+  clearDraft();
+  toast(parentTitle ? `Sub-trace of "${parentTitle}" cancelled` : "Trace cancelled", "info", 2200);
 }
-
 function renderActiveTrace(){
   if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
   if (activePolygon){ activePolygon.setMap(null); activePolygon = null; }
   if (currentTracePoints.length < 2) return;
-
-  const stroke = pendingParentId ? "#1d4ed8" : "#d97706";
-
+  const stroke = pendingParentTrace ? "#1d4ed8" : "#d97706";
   if (currentTracePoints.length >= 3){
     activePolygon = new google.maps.Polygon({
       paths: currentTracePoints, geodesic: true,
       strokeColor: stroke, strokeOpacity: 0.95, strokeWeight: 4,
       fillColor: stroke, fillOpacity: 0.18,
-      clickable: false, map
+      clickable: false, zIndex: 10, map
     });
   } else {
     activePolyline = new google.maps.Polyline({
       path: currentTracePoints, geodesic: true,
       strokeColor: stroke, strokeOpacity: 0.95, strokeWeight: 4,
-      clickable: false, map
+      clickable: false, zIndex: 10, map
     });
   }
 }
-
-function addTracePoint(latLng){
-  const index = currentTracePoints.length;
-  currentTracePoints.push(latLng);
-
+function pushUndoSnapshot(){
+  undoStack.push(currentTracePoints.map(pt => ({
+    lat: typeof pt.lat === 'function' ? pt.lat() : pt.lat,
+    lng: typeof pt.lng === 'function' ? pt.lng() : pt.lng
+  })));
+  if (undoStack.length > 100) undoStack.shift();
+}
+function createTraceMarker(latLng, index){
   const marker = new google.maps.Marker({
-    position: latLng,
-    map,
-    draggable: !panMode,
-    cursor: "grab",
-    zIndex: 100 + index,
+    position: latLng, map,
+    draggable: !panMode, cursor: "grab", zIndex: 100 + index,
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
       scale: POINT_SCALE,
-      fillColor: pendingParentId ? "#1d4ed8" : "#f59e0b",
-      fillOpacity: 1,
-      strokeWeight: 2.5,
-      strokeColor: "#ffffff"
+      fillColor: pendingParentTrace ? "#1d4ed8" : "#f59e0b",
+      fillOpacity: 1, strokeWeight: 2.5, strokeColor: "#ffffff"
     }
   });
-
   marker.addListener("dragstart", () => lockMapForMarkerDrag());
   marker.addListener("dragend", (e) => {
+    if (pendingParentTrace && !pointInRing_(e.latLng, pendingParentTrace.coords)){
+      toast(`Hindi pwedeng ilabas ang point sa "${pendingParentTrace.item.title}".`, "error", 3000);
+      marker.setPosition(currentTracePoints[index]);
+      unlockMapAfterMarkerDrag();
+      return;
+    }
     currentTracePoints[index] = e.latLng;
     renderActiveTrace();
     tempMarkers[index] = marker;
+    saveDraft();
+    haptic(6);
     unlockMapAfterMarkerDrag();
   });
-
   attachLongPress(marker, async () => {
     if (currentTracePoints.length <= 1) return;
     const ok = await showConfirm({
-      title: 'Remove this point?',
-      message: 'You can undo this with the Undo button.',
-      okText: 'Remove',
-      cancelText: 'Keep'
+      title: 'Remove this point?', message: 'You can undo this with the Undo button.',
+      okText: 'Remove', cancelText: 'Keep'
     });
     if (!ok) return;
+    pushUndoSnapshot();
     currentTracePoints.splice(index, 1);
     rebuildTraceMarkers();
     renderActiveTrace();
     updateTraceControls();
+    saveDraft();
+    haptic(10);
     toast('Point removed', "info", 1600);
   });
-
-  tempMarkers.push(marker);
+  return marker;
+}
+function addTracePoint(latLng, silent){
+  if (pendingParentTrace){
+    if (!pointInRing_(latLng, pendingParentTrace.coords)){
+      if (!silent) toast(`Nasa labas ng "${pendingParentTrace.item.title}" ang tap — kailangang nasa loob.`, "error", 3200);
+      return;
+    }
+  }
+  pushUndoSnapshot();
+  const index = currentTracePoints.length;
+  currentTracePoints.push(latLng);
+  tempMarkers.push(createTraceMarker(latLng, index));
   renderActiveTrace();
   updateTraceControls();
+  saveDraft();
+  if (!silent) haptic(6);
 }
-
 function rebuildTraceMarkers(){
   tempMarkers.forEach(m => m.setMap(null));
   tempMarkers = [];
-
-  const color = pendingParentId ? "#1d4ed8" : "#f59e0b";
-
   currentTracePoints.forEach((latLng, index) => {
-    const marker = new google.maps.Marker({
-      position: latLng, map,
-      draggable: !panMode,
-      cursor: "grab",
-      zIndex: 100 + index,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: POINT_SCALE,
-        fillColor: color, fillOpacity: 1,
-        strokeWeight: 2.5, strokeColor: "#ffffff"
-      }
-    });
-
-    marker.addListener("dragstart", () => lockMapForMarkerDrag());
-    marker.addListener("dragend", (e) => {
-      currentTracePoints[index] = e.latLng;
-      renderActiveTrace();
-      tempMarkers[index] = marker;
-      unlockMapAfterMarkerDrag();
-    });
-
-    attachLongPress(marker, async () => {
-      if (currentTracePoints.length <= 1) return;
-      const ok = await showConfirm({
-        title: 'Remove this point?', okText: 'Remove', cancelText: 'Keep'
-      });
-      if (!ok) return;
-      currentTracePoints.splice(index, 1);
-      rebuildTraceMarkers();
-      renderActiveTrace();
-      updateTraceControls();
-      toast('Point removed', "info", 1600);
-    });
-
-    tempMarkers.push(marker);
+    tempMarkers.push(createTraceMarker(latLng, index));
   });
 }
-
 function undoLastTracePoint(){
   if (!currentTracePoints.length) return;
+  pushUndoSnapshot();
   currentTracePoints.pop();
   const m = tempMarkers.pop();
   if (m) m.setMap(null);
-  renderActiveTrace(); updateTraceControls();
+  renderActiveTrace();
+  updateTraceControls();
+  saveDraft();
+  haptic(6);
 }
-
+function performGlobalUndo(){
+  if (!isTracing || undoStack.length === 0) return;
+  const snapshot = undoStack.pop();
+  currentTracePoints = snapshot.map(p => new google.maps.LatLng(p.lat, p.lng));
+  rebuildTraceMarkers();
+  renderActiveTrace();
+  updateTraceControls();
+  saveDraft();
+  haptic(6);
+  toast('Undone', "info", 1400);
+}
 function updateTraceControls(){
   const n = currentTracePoints.length;
   const el = document.getElementById("traceCountText");
-  if (panMode){
-    el.textContent = "✋ Pan mode — drag the map freely";
-    return;
-  }
-  if (pendingParentId){
-    const p = allTraces.find(t => String(t.item.id) === pendingParentId);
-    el.textContent = `Sub of "${p ? p.item.title : '?'}" · ${n} point${n === 1 ? '' : 's'}`;
+  if (panMode){ el.textContent = "Pan mode — drag the map freely"; return; }
+  if (pendingParentTrace){
+    el.textContent = `Inside "${pendingParentTrace.item.title}" · ${n} point${n === 1 ? '' : 's'}`;
   } else {
     el.textContent = n === 0
       ? "Tap the map to start drawing"
       : `${n} point${n > 1 ? 's' : ''}${n >= 3 ? ' · area' : ''}`;
   }
 }
-
 async function finishTracing(btn){
   if (currentTracePoints.length < 3){
     toast("Tap at least 3 points to make an area", "error"); return;
   }
-  const isSub = !!pendingParentId;
+  const isSub = !!pendingParentTrace;
+  if (pendingParentTrace){
+    const offending = currentTracePoints.find(pt =>
+      !pointInRing_(new google.maps.LatLng(
+        typeof pt.lat === 'function' ? pt.lat() : pt.lat,
+        typeof pt.lng === 'function' ? pt.lng() : pt.lng
+      ), pendingParentTrace.coords)
+    );
+    if (offending){
+      toast(`May point sa labas ng "${pendingParentTrace.item.title}". Ayusin muna.`, "error", 4000);
+      return;
+    }
+  }
 
-  const title = await showPrompt({
+  const result = await showModal({
     title: isSub ? 'Name this sub-trace' : 'Name this traced area',
-    message: 'Give it a short, recognizable name.',
-    defaultValue: isSub ? 'Sub-area' : 'Property Boundary',
-    okText: 'Save',
-    cancelText: 'Cancel'
+    message: isSub ? `Nasa loob ng "${pendingParentTrace.item.title}".` : 'Give it a short, recognizable name.',
+    input: isSub ? 'Sub-area' : 'Property Boundary',
+    textarea: '',
+    okText: 'Save', cancelText: 'Cancel'
   });
-  if (!title || !title.trim()) return;
+  if (!result || !result.input || !result.input.trim()) return;
+
+  const title = result.input.trim();
+  const notes = (result.textarea || '').trim();
 
   const pointsSnapshot = currentTracePoints.map(pt => ({
     lat: typeof pt.lat === 'function' ? pt.lat() : pt.lat,
     lng: typeof pt.lng === 'function' ? pt.lng() : pt.lng
   }));
   const parentIdSnapshot = pendingParentId;
+  const parentTraceSnapshot = pendingParentTrace;
 
-  await withButtonBusy(btn, "⏳ Saving…", async () => {
+  await withButtonBusy(btn, "Saving…", async () => {
     isTracing = false;
     panMode = false;
 
-    let color = getRandomColor();
-    if (parentIdSnapshot){
-      const parent = allTraces.find(t => String(t.item.id) === parentIdSnapshot);
-      if (parent){
-        try {
-          const parsed = JSON.parse(parent.item.coordinates);
-          if (parsed && parsed.color) color = parsed.color;
-        } catch(e){}
-      }
+    let color;
+    if (parentTraceSnapshot){
+      try {
+        const parsed = JSON.parse(parentTraceSnapshot.item.coordinates);
+        if (parsed && parsed.color) color = parsed.color;
+      } catch(e){}
     }
+    if (!color) color = pickNextPaletteColor(allTraces);
 
     const traceRecord = {
       id: Date.now().toString(),
-      title: title.trim(),
-      type: "trace",
+      title, type: "trace",
       parentId: parentIdSnapshot || "",
-      coordinates: JSON.stringify({
-        points: pointsSnapshot,
-        color,
-        closed: true
-      })
+      notes: notes || "",
+      coordinates: JSON.stringify({ points: pointsSnapshot, color, closed: true })
     };
 
     if (traceRecord.coordinates.length > 49000){
@@ -1324,27 +1577,31 @@ async function finishTracing(btn){
     toast("Saving trace…");
     try {
       await submitToSheet(traceRecord);
+      haptic(20);
       toast("Trace submitted — refreshing…", "success");
     } catch(e){
       console.error("Save error:", e);
       toast("Save failed: network error", "error", 5000);
     }
     resetTraceMode();
+    clearDraft();
     const ok = await refreshUntil(expectedTotal);
-    toast(ok ? `Synced — "${traceRecord.title}" visible` : "Saved, but list not updated. Tap 🔄 Refresh.",
+    toast(ok ? `Synced — "${title}" visible` : "Saved, but list not updated. Tap Refresh.",
           ok ? "success" : "error", 5000);
   });
 }
-
 function resetTraceMode(){
   isTracing = false;
   pendingParentId = null;
+  pendingParentTrace = null;
   panMode = false;
   currentTracePoints = [];
+  undoStack = [];
   tempMarkers.forEach(m => m.setMap(null));
   tempMarkers = [];
   if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
   if (activePolygon){ activePolygon.setMap(null); activePolygon = null; }
+  clearSubTraceParentOverlay();
   document.getElementById("traceBtn").hidden = false;
   document.getElementById("pinModeBtn").disabled = false;
   document.getElementById("traceActiveControls").hidden = true;
@@ -1352,7 +1609,7 @@ function resetTraceMode(){
   hideMapBadge();
 }
 
-/* ============================================================ SHAPE EDIT MODE */
+/* ============================================================ EDIT MODE */
 function startEditingTrace(itemId){
   if (isPinning || isTracing){ toast("Finish your current action first", "error"); return; }
   if (isEditing){ toast("Already editing a shape", "error"); return; }
@@ -1368,7 +1625,9 @@ function startEditingTrace(itemId){
   const panel = document.getElementById("editPanel");
   panel.hidden = false;
   const input = document.getElementById("editTraceNameInput");
+  const notesInput = document.getElementById("editTraceNotesInput");
   input.value = t.item.title || "";
+  notesInput.value = t.item.notes || "";
 
   document.getElementById("pinModeBtn").disabled = true;
   document.getElementById("traceBtn").disabled = true;
@@ -1379,26 +1638,23 @@ function startEditingTrace(itemId){
     const card = row.closest('.subgroup') || row.closest('.group');
     if (card) card.classList.add('editing');
   }
-
   showMapBadge("Edit shape — drag dots · tap edge to add · long-press dot to remove", true);
   renderEditingShape();
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  haptic(12);
 
   if (IS_TOUCH){
     setTimeout(() => {
-      input.focus();
-      input.select();
+      input.focus(); input.select();
       input.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 300);
   }
 }
-
 function renderEditingShape(){
   if (editingPolyline){ editingPolyline.setMap(null); editingPolyline = null; }
   if (editingFill){ editingFill.setMap(null); editingFill = null; }
   editingMarkers.forEach(m => m.setMap(null));
   editingMarkers = [];
-
   if (editingCoords.length < 2) return;
 
   editingFill = new google.maps.Polygon({
@@ -1407,7 +1663,6 @@ function renderEditingShape(){
     fillColor: "#2563eb", fillOpacity: 0.12,
     clickable: false, map
   });
-
   editingPolyline = new google.maps.Polyline({
     path: editingCoords, geodesic: true,
     strokeColor: "#1d4ed8", strokeOpacity: 0, strokeWeight: 22,
@@ -1424,26 +1679,22 @@ function renderEditingShape(){
         strokeWeight: 2.5, strokeColor: "#ffffff"
       }
     });
-
     marker.addListener("dragstart", () => lockMapForMarkerDrag());
     marker.addListener("dragend", (e) => {
       editingCoords[i] = { lat: e.latLng.lat(), lng: e.latLng.lng() };
       updateEditingPaths();
       unlockMapAfterMarkerDrag();
+      haptic(6);
     });
-
     marker.addListener("rightclick", () => removeEditingVertex(i));
     attachLongPress(marker, () => removeEditingVertex(i));
-
     editingMarkers.push(marker);
   });
 }
-
 function updateEditingPaths(){
   if (editingPolyline) editingPolyline.setPath(editingCoords);
   if (editingFill) editingFill.setPath(editingCoords);
 }
-
 function handleEdgeClick(latLng){
   const pt = { lat: latLng.lat(), lng: latLng.lng() };
   let bestI = 0, bestDist = Infinity, bestProjected = pt;
@@ -1459,70 +1710,59 @@ function handleEdgeClick(latLng){
   if (bestDist > threshold) return;
   editingCoords.splice(bestI + 1, 0, bestProjected);
   renderEditingShape();
+  haptic(8);
   toast(`Added point (${editingCoords.length} total)`, "success", 1600);
 }
-
 async function removeEditingVertex(index){
-  if (editingCoords.length <= 3){
-    toast("A shape needs at least 3 points", "error"); return;
-  }
+  if (editingCoords.length <= 3){ toast("A shape needs at least 3 points", "error"); return; }
   const ok = await showConfirm({
-    title: 'Remove this point?',
-    message: 'The shape will be redrawn without it.',
-    okText: 'Remove',
-    cancelText: 'Keep'
+    title: 'Remove this point?', message: 'The shape will be redrawn without it.',
+    okText: 'Remove', cancelText: 'Keep'
   });
   if (!ok) return;
   editingCoords.splice(index, 1);
   renderEditingShape();
+  haptic(10);
   toast(`Removed point (${editingCoords.length} remaining)`, "info", 1600);
 }
-
 async function saveEditedTrace(btn){
   if (editingCoords.length < 3){ toast("Need at least 3 points", "error"); return; }
   const nameInput = document.getElementById("editTraceNameInput");
+  const notesInput = document.getElementById("editTraceNotesInput");
   const newTitle = (nameInput.value || "").trim();
-  if (!newTitle){
-    toast("Please enter a name", "error"); nameInput.focus(); return;
-  }
+  if (!newTitle){ toast("Please enter a name", "error"); nameInput.focus(); return; }
+  const newNotes = (notesInput.value || "").trim();
 
-  await withButtonBusy(btn, "⏳ Saving…", async () => {
+  await withButtonBusy(btn, "Saving…", async () => {
     let color = "#2563eb";
     try {
       const parsed = JSON.parse(editingTraceItem.coordinates);
       if (parsed && parsed.color) color = parsed.color;
     } catch(e){}
-
     const updated = {
       ...editingTraceItem,
       title: newTitle,
-      coordinates: JSON.stringify({
-        points: editingCoords,
-        color,
-        closed: true
-      })
+      notes: newNotes,
+      coordinates: JSON.stringify({ points: editingCoords, color, closed: true })
     };
-
     if (updated.coordinates.length > 49000){
       toast(`Shape is too big (${editingCoords.length} points).`, "error", 6000); return;
     }
-
     toast("Saving changes…");
     try {
       await submitToSheet(updated);
+      haptic(20);
       toast("Changes submitted — refreshing…", "success");
     } catch(e){
       console.error("Save error:", e);
       toast("Save failed: network error", "error", 5000);
     }
-
     cancelEditingTrace();
     const ok = await refreshUntil(lastRecordCount, 4);
-    toast(ok ? "Synced — shape updated" : "Saved, but list not updated. Tap 🔄 Refresh.",
+    toast(ok ? "Synced — shape updated" : "Saved, but list not updated. Tap Refresh.",
           ok ? "success" : "error", 5000);
   });
 }
-
 function cancelEditingTrace(){
   isEditing = false;
   editingTraceItem = null;
@@ -1544,8 +1784,7 @@ function showMapBadge(text, amber = false){
   if (!b) return;
   b.hidden = false;
   b.classList.toggle('amber', amber);
-  const t = document.getElementById('mapBadgeText');
-  if (t) t.textContent = text;
+  document.getElementById('mapBadgeText').textContent = text;
 }
 function hideMapBadge(){
   const b = document.getElementById('mapBadge');
@@ -1557,10 +1796,14 @@ function clearOverlays(){
   drawnOverlays.forEach(o => o.setMap(null));
   drawnOverlays = [];
   featureIndex.clear();
+  traceLabels.forEach(l => l.overlay.setMap(null));
+  traceLabels = [];
+  if (clusterer) { clusterer.clearMarkers(); clusterer = null; }
+  pinMarkerObjects = [];
+  if (lastJumpMarker){ lastJumpMarker.setMap(null); lastJumpMarker = null; }
 }
-
 async function manualRefresh(btn){
-  await withButtonBusy(btn, "⏳…", async () => {
+  await withButtonBusy(btn, "…", async () => {
     toast("Refreshing…");
     try {
       clearOverlays();
@@ -1581,16 +1824,15 @@ async function fetchPlacesFromSheet(){
       allTraces = [];
       lastRecordCount = 0;
       listContainer.innerHTML =
-        `<div class="empty"><span class="big">🗺️</span>No saved items yet.<br>Draw a main trace first (e.g. "anayan").</div>`;
+        `<div class="empty"><span class="big-ic">${svgIcon('map', 40, 1.5)}</span>No saved items yet.<br>Draw a main trace first (e.g. "anayan").</div>`;
       document.getElementById('recordCount').textContent = '0';
       return 0;
     }
 
     const traces = [], pins = [];
-
     allRecords.forEach(item => {
       if (item.coordinates && item.coordinates !== ""){
-        let coords = [], strokeColor = getRandomColor();
+        let coords = [], strokeColor = '#2563eb';
         try {
           let parsed = JSON.parse(item.coordinates);
           if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -1601,12 +1843,8 @@ async function fetchPlacesFromSheet(){
           }
         } catch(e){ return; }
         if (coords.length > 0){
-          traces.push({
-            item,
-            coords,
-            strokeColor,
-            parentId: item.parentId ? String(item.parentId) : ""
-          });
+          traces.push({ item, coords, strokeColor,
+            parentId: item.parentId ? String(item.parentId) : "" });
         }
       } else if (item.latitude && item.longitude){
         pins.push({ item, pos: { lat: parseFloat(item.latitude), lng: parseFloat(item.longitude) } });
@@ -1617,16 +1855,13 @@ async function fetchPlacesFromSheet(){
 
     const traceById = new Map();
     traces.forEach(t => traceById.set(String(t.item.id), t));
-
     const roots = [];
     const childrenMap = new Map();
     traces.forEach(t => {
       if (t.parentId && traceById.has(t.parentId)){
         if (!childrenMap.has(t.parentId)) childrenMap.set(t.parentId, []);
         childrenMap.get(t.parentId).push(t);
-      } else {
-        roots.push(t);
-      }
+      } else roots.push(t);
     });
 
     const sorted = [...traces].sort((a, b) => {
@@ -1638,14 +1873,12 @@ async function fetchPlacesFromSheet(){
     sorted.forEach(t => {
       const isSub = !!t.parentId && traceById.has(t.parentId);
       const hasChildren = childrenMap.has(String(t.item.id));
-
       let fillOpacity, strokeWeight, strokeOpacity;
       if (isSub){ fillOpacity = 0.24; strokeWeight = 3; strokeOpacity = 0.9; }
       else if (hasChildren){ fillOpacity = 0.06; strokeWeight = 4; strokeOpacity = 0.65; }
       else { fillOpacity = 0.18; strokeWeight = 4; strokeOpacity = 0.85; }
 
       featureIndex.set(String(t.item.id), { kind:'trace', coords: t.coords });
-
       let poly;
       if (t.coords.length >= 3){
         poly = new google.maps.Polygon({
@@ -1662,39 +1895,45 @@ async function fetchPlacesFromSheet(){
         });
       }
       drawnOverlays.push(poly);
-
-      const startDot = new google.maps.Marker({
-        position: t.coords[0], map, title: t.item.title,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: isSub ? 5 : 6,
-          fillColor: t.strokeColor, fillOpacity: 1,
-          strokeWeight: 2, strokeColor: "#ffffff"
-        }
-      });
-      drawnOverlays.push(startDot);
     });
 
     const pinsByTraceId = new Map();
     const unassignedPins = [];
-
     pins.forEach(pinObj => {
       const containing = findTraceContaining(new google.maps.LatLng(pinObj.pos));
       if (containing){
         const key = String(containing.item.id);
         if (!pinsByTraceId.has(key)) pinsByTraceId.set(key, []);
         pinsByTraceId.get(key).push(pinObj);
-      } else {
-        unassignedPins.push(pinObj);
-      }
+      } else unassignedPins.push(pinObj);
       featureIndex.set(String(pinObj.item.id), { kind:'pin', pos: pinObj.pos });
-
-      const marker = new google.maps.Marker({
-        position: pinObj.pos, map, title: pinObj.item.title,
-        icon: getIconForType(pinObj.item.type)
-      });
-      drawnOverlays.push(marker);
     });
+
+    pinMarkerObjects = [];
+    pins.forEach(pinObj => {
+      const marker = new google.maps.Marker({
+        position: pinObj.pos, title: pinObj.item.type || 'Pin',
+        icon: markerSvgIcon(pinObj.item.type)
+      });
+      pinMarkerObjects.push({ marker, item: pinObj.item, pos: pinObj.pos });
+    });
+
+    if (!window.__noClusterer && typeof markerClusterer !== 'undefined' && markerClusterer.MarkerClusterer){
+      clusterer = new markerClusterer.MarkerClusterer({
+        map,
+        markers: pinMarkerObjects.map(e => e.marker),
+        algorithm: new markerClusterer.GridAlgorithm({ gridSize: 60 })
+      });
+    } else {
+      pinMarkerObjects.forEach(e => e.marker.setMap(map));
+    }
+
+    traces.forEach(t => {
+      if (t.coords.length < 3) return;
+      const cnt = (pinsByTraceId.get(String(t.item.id)) || []).length;
+      traceLabels.push(createTraceLabel(t, cnt));
+    });
+    updateTraceLabelVisibility();
 
     roots.forEach(root => {
       const children = childrenMap.get(String(root.item.id)) || [];
@@ -1705,14 +1944,12 @@ async function fetchPlacesFromSheet(){
 
     lastRecordCount = allRecords.length;
     document.getElementById('recordCount').textContent = allRecords.length;
-
-    console.log(`[Territory Mapper] ${roots.length} roots, ${traces.length - roots.length} sub-traces, ${pins.length} pins.`);
     return allRecords.length;
 
   } catch (error){
     console.error("Error loading sheet data:", error);
     listContainer.innerHTML =
-      `<div class="empty" style="color:var(--danger)"><span class="big">⚠️</span>Couldn't load your saved items.</div>`;
+      `<div class="empty" style="color:var(--danger)">Couldn't load your saved items.</div>`;
     return -1;
   }
 }
@@ -1724,46 +1961,46 @@ function renderParentGroup(rootTrace, children, directPins, pinsByTraceId){
   group.className = "group";
   group.dataset.traceId = String(rootTrace.item.id);
 
-  const totalPins = directPins.length +
-    children.reduce((sum, c) => sum + (pinsByTraceId.get(String(c.item.id)) || []).length, 0);
+  const treePins = [...directPins];
+  children.forEach(c => {
+    (pinsByTraceId.get(String(c.item.id)) || []).forEach(p => treePins.push(p));
+  });
+  const treeCounts = countPinsByType(treePins);
 
-  const subCountLabel = children.length
-    ? `${children.length} sub · ${totalPins}`
-    : String(totalPins);
-
-  let bodyHtml = "";
-
+  let childrenHtml = '';
   children.forEach(child => {
-    const childPins = pinsByTraceId.get(String(child.item.id)) || [];
-    bodyHtml += renderSubGroupHtml(child, childPins);
+    const cps = pinsByTraceId.get(String(child.item.id)) || [];
+    childrenHtml += renderSubGroupHtml(child, cps);
   });
 
-  if (directPins.length){
-    bodyHtml += `<div class="pin-list">` + directPins.map(p => pinRowHtml(p)).join("") + `</div>`;
-  } else if (children.length === 0){
-    bodyHtml = `<div class="hint-empty">No pins inside this trace yet</div>`;
-  }
+  const directDetailsHtml = directPins.length
+    ? renderPinDetails(directPins, `parent-${rootTrace.item.id}`)
+    : '';
 
   group.innerHTML = `
     <div class="group-head" data-toggle>
       <span class="caret">▶</span>
       <span class="swatch" style="background:${esc(rootTrace.strokeColor)}"></span>
       <span class="group-title">${esc(rootTrace.item.title)}</span>
-      <span class="count-pill">${subCountLabel}</span>
-      <button class="zoom-btn" data-zoom="${esc(rootTrace.item.id)}">Zoom</button>
-      <button class="icon-btn edit" data-shape-edit="${esc(rootTrace.item.id)}" title="Edit shape">✏️</button>
-      <button class="icon-btn sub" data-add-sub="${esc(rootTrace.item.id)}" title="Add sub-trace">＋</button>
-      <button class="icon-btn del" data-del="${esc(rootTrace.item.id)}" data-del-title="${esc(rootTrace.item.title)}" data-del-kind="trace" title="Delete trace">🗑</button>
+      <button class="zoom-btn" data-zoom="${esc(rootTrace.item.id)}" title="Zoom">${svgIcon('target', 15)}</button>
+      <button class="icon-btn edit" data-shape-edit="${esc(rootTrace.item.id)}" title="Edit shape">${svgIcon('edit', 14)}</button>
+      <button class="icon-btn sub" data-add-sub="${esc(rootTrace.item.id)}" title="Add sub-trace">${svgIcon('plus', 14)}</button>
+      <button class="icon-btn del" data-del="${esc(rootTrace.item.id)}" data-del-title="${esc(rootTrace.item.title)}" data-del-kind="trace" title="Delete trace">${svgIcon('trash', 14)}</button>
     </div>
-    <div class="group-body"><div class="inner">${bodyHtml}</div></div>
+    <div class="group-body"><div class="inner">
+      ${renderPinSummary(treeCounts, directPins.length > 0, `parent-${rootTrace.item.id}`)}
+      ${childrenHtml}
+      ${directDetailsHtml}
+    </div></div>
   `;
   container.appendChild(group);
 }
 
 function renderSubGroupHtml(subTrace, childPins){
-  const pinsHtml = childPins.length
-    ? `<div class="pin-list">` + childPins.map(p => pinRowHtml(p)).join("") + `</div>`
-    : `<div class="hint-empty">No pins yet</div>`;
+  const counts = countPinsByType(childPins);
+  const detailsHtml = childPins.length
+    ? renderPinDetails(childPins, `sub-${subTrace.item.id}`)
+    : '';
 
   return `
     <div class="subgroup" data-trace-id="${esc(subTrace.item.id)}">
@@ -1771,48 +2008,82 @@ function renderSubGroupHtml(subTrace, childPins){
         <span class="caret">▶</span>
         <span class="swatch" style="background:${esc(subTrace.strokeColor)}"></span>
         <span class="subgroup-title">${esc(subTrace.item.title)}</span>
-        <span class="count-pill">${childPins.length}</span>
-        <button class="zoom-btn" data-zoom="${esc(subTrace.item.id)}">Zoom</button>
-        <button class="icon-btn edit" data-shape-edit="${esc(subTrace.item.id)}" title="Edit shape">✏️</button>
-        <button class="icon-btn del" data-del="${esc(subTrace.item.id)}" data-del-title="${esc(subTrace.item.title)}" data-del-kind="trace" title="Delete sub-trace">🗑</button>
+        <button class="zoom-btn" data-zoom="${esc(subTrace.item.id)}" title="Zoom">${svgIcon('target', 14)}</button>
+        <button class="icon-btn edit" data-shape-edit="${esc(subTrace.item.id)}" title="Edit shape">${svgIcon('edit', 13)}</button>
+        <button class="icon-btn del" data-del="${esc(subTrace.item.id)}" data-del-title="${esc(subTrace.item.title)}" data-del-kind="trace" title="Delete sub-trace">${svgIcon('trash', 13)}</button>
       </div>
-      <div class="subgroup-body"><div class="inner">${pinsHtml}</div></div>
+      ${renderPinSummary(counts, childPins.length > 0, `sub-${subTrace.item.id}`)}
+      ${detailsHtml}
     </div>
   `;
 }
 
-function pinRowHtml(p){
-  return `
-    <div class="record" data-goto="${esc(p.item.id)}">
-      <div class="swatch" style="background:#16a34a"></div>
-      <div class="rec-info">
-        <div class="rec-title">${esc(p.item.title)}</div>
-        <div class="rec-type">${esc(p.item.type)}</div>
-      </div>
-      <button class="edit-btn" data-edit="${esc(p.item.id)}" title="Rename">✏️</button>
-      <button class="del-btn" data-del="${esc(p.item.id)}" data-del-title="${esc(p.item.title)}" data-del-kind="pin" title="Delete pin">🗑</button>
-    </div>`;
+function renderPinDetails(pins, key){
+  const rows = pins.map(p => {
+    const color = pinColorForType(p.item.type);
+    const label = p.item.type || 'Pin';
+    return `
+      <div class="pin-row" data-goto-pin="${esc(p.item.id)}">
+        <span class="pin-dot" style="background:${color}"></span>
+        <span class="pin-type">${esc(label)}</span>
+        <span class="pin-go">${svgIcon('arrowRight', 13, 2.2)}</span>
+        <button class="pin-del" data-del="${esc(p.item.id)}" data-del-title="${esc(p.item.title)}" data-del-kind="pin" title="Delete pin">${svgIcon('trash', 13)}</button>
+      </div>`;
+  }).join('');
+  return `<div class="pin-details" data-pins-for="${esc(key)}"><div class="pin-details-list">${rows}</div></div>`;
 }
 
 function renderUnassignedGroup(unassignedPins){
   const container = document.getElementById("listContainer");
   const group = document.createElement("div");
   group.className = "group";
-  const pinsHtml = unassignedPins.map(p => pinRowHtml(p)).join("");
+  const counts = countPinsByType(unassignedPins);
   group.innerHTML = `
     <div class="group-head" data-toggle>
       <span class="caret">▶</span>
       <span class="swatch" style="background:#94a3b8"></span>
       <span class="group-title" style="color:var(--text-dim)">Unassigned pins</span>
-      <span class="count-pill">${unassignedPins.length}</span>
     </div>
-    <div class="group-body"><div class="inner"><div class="pin-list">${pinsHtml}</div></div></div>
+    <div class="group-body"><div class="inner">
+      ${renderPinSummary(counts, unassignedPins.length > 0, 'unassigned')}
+      ${renderPinDetails(unassignedPins, 'unassigned')}
+    </div></div>
   `;
   container.appendChild(group);
 }
 
 /* ============================================================ LIST CLICKS */
 document.getElementById('listContainer').addEventListener('click', (e) => {
+  // Delete pin — must come first to beat the goto handler
+  const pinDelBtn = e.target.closest('.pin-del');
+  if (pinDelBtn){
+    e.stopPropagation();
+    deleteRecord(pinDelBtn.dataset.del, pinDelBtn.dataset.delTitle, pinDelBtn.dataset.delKind, pinDelBtn);
+    return;
+  }
+
+  // Show/hide pins
+  const showPinsBtn = e.target.closest('[data-toggle-pins]');
+  if (showPinsBtn){
+    e.stopPropagation();
+    const scope = showPinsBtn.closest('.group, .subgroup');
+    if (scope){
+      scope.classList.toggle('pins-open');
+      const isOpen = scope.classList.contains('pins-open');
+      showPinsBtn.innerHTML = isOpen ? 'Hide&nbsp;▴' : 'Show&nbsp;▾';
+    }
+    haptic(6);
+    return;
+  }
+
+  // Jump to pin on map
+  const gotoPinRow = e.target.closest('[data-goto-pin]');
+  if (gotoPinRow){
+    e.stopPropagation();
+    jumpToPin(gotoPinRow.dataset.gotoPin);
+    return;
+  }
+
   const addSubBtn = e.target.closest('[data-add-sub]');
   if (addSubBtn){ e.stopPropagation(); startTracing(addSubBtn.dataset.addSub); return; }
 
@@ -1826,14 +2097,6 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
     return;
   }
 
-  const editBtn = e.target.closest('[data-edit]');
-  if (editBtn){
-    e.stopPropagation();
-    const item = allRecords.find(r => String(r.id) === editBtn.dataset.edit);
-    if (item) editItemName(item, editBtn);
-    return;
-  }
-
   const zoomBtn = e.target.closest('[data-zoom]');
   if (zoomBtn){
     e.stopPropagation();
@@ -1842,52 +2105,44 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
     return;
   }
 
-  const gotoEl = e.target.closest('[data-goto]');
-  if (gotoEl){
-    const f = featureIndex.get(gotoEl.dataset.goto);
-    if (f && f.kind === 'pin'){ map.panTo(f.pos); map.setZoom(17); }
+  const subHead = e.target.closest('[data-toggle-sub]');
+  if (subHead){
+    e.stopPropagation();
+    subHead.closest('.subgroup').classList.toggle('open');
+    haptic(4);
     return;
   }
-
-  const subHead = e.target.closest('[data-toggle-sub]');
-  if (subHead){ subHead.closest('.subgroup').classList.toggle('open'); return; }
-
   const head = e.target.closest('[data-toggle]');
-  if (head){ head.closest('.group').classList.toggle('open'); }
+  if (head){
+    head.closest('.group').classList.toggle('open');
+    haptic(4);
+  }
 });
 
 /* ============================================================ DELETE */
 async function deleteRecord(id, title, kind, btn){
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-
   let childCount = 0;
-  if (kind === 'trace'){
-    childCount = allTraces.filter(t => t.parentId === String(id)).length;
-  }
+  if (kind === 'trace') childCount = allTraces.filter(t => t.parentId === String(id)).length;
 
   let message;
   if (kind === 'trace'){
     message = `Delete the trace "${title}"?`;
-    if (childCount > 0){
-      message += `\n\n⚠ This trace has ${childCount} sub-trace(s). They will become top-level traces.`;
-    }
+    if (childCount > 0) message += `\n\nThis trace has ${childCount} sub-trace(s). They will become top-level.`;
     message += `\n\nPins inside it will NOT be deleted.`;
-  } else {
-    message = `Delete the pin "${title}"?`;
-  }
+  } else message = `Delete this pin?`;
 
   const ok = await showConfirm({
     title: kind === 'trace' ? 'Delete trace?' : 'Delete pin?',
-    message,
-    okText: 'Delete',
-    cancelText: 'Cancel'
+    message, okText: 'Delete', cancelText: 'Cancel'
   });
   if (!ok) return;
 
-  await withButtonBusy(btn, "⏳", async () => {
+  await withButtonBusy(btn, "…", async () => {
     toast("Deleting…");
     try {
       await deleteOnServer(id);
+      haptic(20);
       toast("Deleted", "success");
       await new Promise(r => setTimeout(r, 400));
       clearOverlays();
@@ -1899,32 +2154,121 @@ async function deleteRecord(id, title, kind, btn){
   });
 }
 
-/* ============================================================ EDIT PIN NAME */
-async function editItemName(item, btn){
-  const newTitle = await showPrompt({
-    title: 'Rename pin',
-    message: 'Enter a new name for this pin.',
-    defaultValue: item.title || '',
-    okText: 'Rename',
-    cancelText: 'Cancel'
-  });
-  if (!newTitle || !newTitle.trim() || newTitle === item.title) return;
+/* ============================================================ BOTTOM SHEET */
+function installBottomSheet(){
+  if (!IS_TOUCH || window.innerWidth > 768) return;
+  const sidebar = document.getElementById('sidebar');
+  const handle = document.getElementById('sheetHandle');
+  if (!sidebar || !handle) return;
 
-  await withButtonBusy(btn, "⏳", async () => {
-    toast("Renaming…");
-    try {
-      await submitToSheet({ ...item, title: newTitle.trim() });
-      toast("Renamed", "success");
-      await new Promise(r => setTimeout(r, 1200));
-      clearOverlays();
-      await fetchPlacesFromSheet();
-    } catch(err){
-      console.error("Rename error:", err);
-      toast("Rename failed", "error", 5000);
+  const STATES = { collapsed: 18, half: 45, full: 85 };
+  let startY = 0, startHeightVh = 45, dragging = false;
+
+  function setHeight(vh){ sidebar.style.setProperty('--sheet-height', vh + 'dvh'); }
+  function getHeightVh(){ return (sidebar.getBoundingClientRect().height / window.innerHeight) * 100; }
+
+  handle.addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY;
+    startHeightVh = getHeightVh();
+    dragging = true;
+    sidebar.classList.add('dragging');
+    e.preventDefault();
+  }, { passive: false });
+
+  handle.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    const newVh = Math.max(15, Math.min(92, startHeightVh - (dy / window.innerHeight) * 100));
+    setHeight(newVh);
+    e.preventDefault();
+  }, { passive: false });
+
+  handle.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    sidebar.classList.remove('dragging');
+    const current = getHeightVh();
+    let nearest = 'half', bestDist = Infinity;
+    Object.entries(STATES).forEach(([name, v]) => {
+      const d = Math.abs(current - v);
+      if (d < bestDist){ bestDist = d; nearest = name; }
+    });
+    setHeight(STATES[nearest]);
+    haptic(6);
+  });
+
+  let lastTap = 0;
+  handle.addEventListener('touchend', () => {
+    const now = Date.now();
+    if (now - lastTap < 320){
+      const current = getHeightVh();
+      setHeight(current < 30 ? STATES.full : STATES.collapsed);
+      haptic(8);
+    }
+    lastTap = now;
+  });
+}
+
+/* ============================================================ KEYBOARD */
+function installKeyboardShortcuts(){
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea') return;
+
+    if (e.ctrlKey || e.metaKey){
+      if (e.key === 'z' || e.key === 'Z'){
+        if (isTracing){ e.preventDefault(); performGlobalUndo(); }
+        return;
+      }
+      if (e.key === 's' || e.key === 'S'){
+        e.preventDefault();
+        if (isTracing && currentTracePoints.length >= 3){
+          finishTracing(document.getElementById('saveTraceBtn'));
+        } else if (isPinning && currentTempPins.length){
+          finishPinning(document.getElementById('savePinsBtn'));
+        } else if (isEditing && editingCoords.length >= 3){
+          saveEditedTrace(document.getElementById('saveEditBtn'));
+        }
+        return;
+      }
+      return;
+    }
+
+    switch (e.key){
+      case 'Escape':
+        if (isTracing) cancelTracing();
+        else if (isPinning) cancelPinMode();
+        else if (isEditing) cancelEditingTrace();
+        break;
+      case 't': case 'T':
+        if (!isTracing && !isPinning && !isEditing) toggleTracing();
+        break;
+      case 'p': case 'P':
+        if (!isTracing && !isPinning && !isEditing) togglePinMode();
+        break;
+      case 'd': case 'D':
+        if (isTracing || isPinning) togglePanMode();
+        break;
     }
   });
 }
 
+/* ============================================================ LEAVE WARNING */
+function installLeaveWarning(){
+  window.addEventListener('beforeunload', (e) => {
+    const busy = isTracing && currentTracePoints.length > 0;
+    const busyPin = isPinning && currentTempPins.length > 0;
+    const busyEdit = isEditing;
+    if (busy || busyPin || busyEdit){
+      saveDraft();
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+}
+
+/* ============================================================ NAV */
 function fitBoundsToCoords(coords){
   const bounds = new google.maps.LatLngBounds();
   coords.forEach(pt => bounds.extend(pt));
@@ -1933,8 +2277,17 @@ function fitBoundsToCoords(coords){
 function goToCurrentGPS(){
   map.panTo(userLocation);
   map.setZoom(16);
+  haptic(10);
   toast("Centered on your location");
 }
+
+/* ============================================================ BOOT */
+window.addEventListener('load', () => {
+  renderStaticIcons();
+  installBottomSheet();
+  installKeyboardShortcuts();
+  installLeaveWarning();
+});
 </script>
 </body>
 </html>
