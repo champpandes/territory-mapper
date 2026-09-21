@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>Places &amp; Traces</title>
+<title>Territory Mapper</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232563eb'/%3E%3Cstop offset='1' stop-color='%234f8ef7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-family='Inter,-apple-system,Segoe UI,Roboto,sans-serif' font-size='30' font-weight='800' fill='white' letter-spacing='-1'%3ETM%3C/text%3E%3C/svg%3E">
 <style>
 :root{
   --bg:#f5f7fa;--surface:#ffffff;--surface-2:#f2f4f8;--border:#e4e8ef;
@@ -33,12 +34,18 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 #sidebar::-webkit-scrollbar-thumb{background:#d5dbe4;border-radius:99px;border:2px solid var(--surface)}
 #sidebar::-webkit-scrollbar-thumb:hover{background:#c0c8d4}
 
-.brand{display:flex;align-items:center;gap:11px;padding:18px 18px 16px;
+/* ---------------- BRAND / LOGO ---------------- */
+.brand{display:flex;align-items:center;gap:12px;padding:18px 18px 16px;
   border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:5}
-.brand-icon{width:38px;height:38px;flex-shrink:0;border-radius:11px;display:grid;place-items:center;
-  font-size:19px;background:linear-gradient(135deg,#2563eb,#4f8ef7);box-shadow:0 4px 12px rgba(37,99,235,.3)}
-.brand h1{font-size:1rem;font-weight:700;letter-spacing:-.01em;line-height:1.2}
-.brand p{font-size:.72rem;color:var(--text-faint);margin-top:2px}
+
+.brand-logo{
+  width:40px;height:40px;flex-shrink:0;position:relative;
+  filter:drop-shadow(0 4px 10px rgba(37,99,235,.35));
+}
+.brand-logo svg{display:block;width:100%;height:100%}
+
+.brand h1{font-size:1.02rem;font-weight:750;letter-spacing:-.02em;line-height:1.15;color:var(--text)}
+.brand p{font-size:.7rem;color:var(--text-faint);margin-top:3px;letter-spacing:.005em}
 
 .section{padding:16px 18px;border-bottom:1px solid var(--border)}
 .section:last-child{border-bottom:none}
@@ -76,7 +83,7 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
 .field label{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
 .field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
-  font-family:inherit;font-size:16px; /* 16px prevents iOS zoom */
+  font-family:inherit;font-size:16px;
   font-weight:600;color:var(--text);background:var(--surface);
   transition:border-color .14s,box-shadow .14s;outline:none}
 .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
@@ -263,19 +270,18 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
     position:relative;z-index:20;
     padding-bottom:env(safe-area-inset-bottom)
   }
-  /* Drag handle visual */
   #sidebar::before{
     content:"";display:block;width:44px;height:5px;border-radius:99px;
     background:#cbd5e1;margin:8px auto 0;flex-shrink:0;
   }
   .brand{padding:6px 16px 12px}
-  .brand-icon{width:34px;height:34px;font-size:17px}
+  .brand-logo{width:36px;height:36px}
+  .brand h1{font-size:.98rem}
   .section{padding:14px 16px}
   .map-badge{top:12px;font-size:.72rem;padding:7px 13px}
   #panFab{bottom:calc(24px + env(safe-area-inset-bottom));padding:13px 22px;font-size:.88rem}
   #toasts{top:calc(12px + env(safe-area-inset-top))}
   .modal-card{margin-bottom:auto;margin-top:auto}
-  /* Larger group-header hit targets */
   .group-head{padding:13px 12px}
   .subgroup-head{padding:10px 10px}
 }
@@ -291,9 +297,48 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 
 <aside id="sidebar">
   <div class="brand">
-    <div class="brand-icon">🗺️</div>
+    <div class="brand-logo" aria-hidden="true">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="tmGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2563eb"/>
+            <stop offset="1" stop-color="#4f8ef7"/>
+          </linearGradient>
+          <clipPath id="tmClip">
+            <rect width="64" height="64" rx="14"/>
+          </clipPath>
+        </defs>
+
+        <!-- Rounded square background -->
+        <rect width="64" height="64" rx="14" fill="url(#tmGrad)"/>
+
+        <!-- Subtle map-grid lines, clipped to the rounded square -->
+        <g clip-path="url(#tmClip)" stroke="#ffffff" stroke-opacity="0.13" stroke-width="1">
+          <line x1="0" y1="16" x2="64" y2="16"/>
+          <line x1="0" y1="32" x2="64" y2="32"/>
+          <line x1="0" y1="48" x2="64" y2="48"/>
+          <line x1="16" y1="0" x2="16" y2="64"/>
+          <line x1="32" y1="0" x2="32" y2="64"/>
+          <line x1="48" y1="0" x2="48" y2="64"/>
+        </g>
+
+        <!-- Slight inner highlight at top -->
+        <rect x="0" y="0" width="64" height="64" rx="14"
+              fill="url(#tmGrad)" opacity="0"/>
+
+        <!-- "TM" monogram -->
+        <text x="32" y="44" text-anchor="middle"
+              font-family="Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+              font-size="28" font-weight="800" fill="#ffffff"
+              letter-spacing="-1.2">TM</text>
+
+        <!-- Tiny location-pin accent in the corner -->
+        <circle cx="50" cy="14" r="4.5" fill="#ffffff"/>
+        <circle cx="50" cy="14" r="1.8" fill="#2563eb"/>
+      </svg>
+    </div>
     <div>
-      <h1>Places &amp; Traces</h1>
+      <h1>Territory Mapper</h1>
       <p>Map your world, one pin at a time</p>
     </div>
   </div>
@@ -401,7 +446,6 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   </button>
 </div>
 
-<!-- Modal root -->
 <div id="modalRoot" class="modal-root" hidden>
   <div class="modal-backdrop" id="modalBackdrop"></div>
   <div class="modal-card" role="dialog" aria-modal="true">
@@ -425,13 +469,9 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD9x7ztrDySel0ERqDRS558dRZVVXsGMJS37c2pBOYC3DolP96R9F2M3LfpJXycW9rlA/exec";
 const TRACE_RADIUS_METERS = 300;
 
-/* ----- Touch detection ----- */
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const IS_MOBILE_WIDTH = () => window.matchMedia('(max-width: 768px)').matches;
-/* Bigger dots on touch devices */
-const POINT_SCALE     = IS_TOUCH ? 11 : 7;
-const VERTEX_SCALE    = IS_TOUCH ? 12 : 8;
-/* Ghost tap threshold */
+const POINT_SCALE  = IS_TOUCH ? 11 : 7;
+const VERTEX_SCALE = IS_TOUCH ? 12 : 8;
 const DRAG_THRESHOLD_PX = 12;
 
 const MAP_STYLE = [
@@ -475,7 +515,7 @@ let editingPolyline = null;
 let editingFill = null;
 
 let panMode = false;
-let markerInteractionLock = false;   // set while dragging a marker
+let markerInteractionLock = false;
 
 /* ============================================================ MODAL SYSTEM */
 let modalResolve = null;
@@ -537,16 +577,13 @@ function showModal({title = '', message = '', input = null, okText = 'OK', cance
         if (e.key === 'Enter'){ e.preventDefault(); confirm(); }
         if (e.key === 'Escape'){ e.preventDefault(); cancel(); }
       };
-      // Focus & bring into view (handles mobile keyboard)
       setTimeout(() => {
         iEl.focus();
         iEl.select?.();
-        // Ensure the modal card is visible after the keyboard slides up
         const card = iEl.closest('.modal-card');
         if (card) card.scrollIntoView({ block: 'center' });
       }, 60);
     } else {
-      // Focus the OK button for keyboard users
       setTimeout(() => okBtn.focus(), 60);
     }
   });
@@ -759,14 +796,7 @@ async function refreshUntil(expectedAtLeast, maxAttempts = 6){
   return false;
 }
 
-/* ============================================================
-   GHOST-TAP SUPPRESSION
-   ------------------------------------------------------------
-   Track touchstart/mousedown position. If the user moved more
-   than DRAG_THRESHOLD_PX before the click, suppress the click.
-   This is far more reliable than relying on dragstart/dragend,
-   especially on mobile where synthetic clicks can lag behind.
-   ============================================================ */
+/* ============================================================ GHOST-TAP SUPPRESSION */
 let pointerStart = null;
 
 function installPointerTracking(){
@@ -778,7 +808,6 @@ function installPointerTracking(){
       pointerStart.moved = true;
     }
   };
-  const up = () => { /* handled in click */ };
 
   mapEl.addEventListener('touchstart', e => {
     const t = e.touches[0]; if (t) down(t.clientX, t.clientY);
@@ -795,7 +824,6 @@ function shouldIgnoreMapClick(){
   if (markerInteractionLock) return true;
   if (!pointerStart) return false;
   if (pointerStart.moved) return true;
-  // Very quick taps are fine; slow taps (>600ms) that didn't move are probably fine too
   return false;
 }
 
@@ -843,13 +871,11 @@ function initMap(){
   fetchPlacesFromSheet();
 }
 
-/* Lock the map while dragging a marker */
 function lockMapForMarkerDrag(){
   markerInteractionLock = true;
   map.setOptions({ draggable: false, gestureHandling: 'none' });
 }
 function unlockMapAfterMarkerDrag(){
-  // Short delay so the click that ends the drag doesn't add a point
   setTimeout(() => {
     markerInteractionLock = false;
     map.setOptions({ draggable: true, gestureHandling: 'greedy' });
@@ -1141,7 +1167,6 @@ function addTracePoint(latLng){
     }
   });
 
-  // Lock map while dragging this marker, then update on dragend
   marker.addListener("dragstart", () => lockMapForMarkerDrag());
   marker.addListener("dragend", (e) => {
     currentTracePoints[index] = e.latLng;
@@ -1150,7 +1175,6 @@ function addTracePoint(latLng){
     unlockMapAfterMarkerDrag();
   });
 
-  // Long-press to remove a point (great on mobile)
   attachLongPress(marker, async () => {
     if (currentTracePoints.length <= 1) return;
     const ok = await showConfirm({
@@ -1161,16 +1185,6 @@ function addTracePoint(latLng){
     });
     if (!ok) return;
     currentTracePoints.splice(index, 1);
-    marker.setMap(null);
-    // Reindex remaining markers
-    const survivor = [];
-    tempMarkers.forEach((m, i) => {
-      if (i === index) return;
-      // Rebind listeners by rebuilding markers — simpler: just drop and rebuild
-      survivor.push(m);
-    });
-    tempMarkers = survivor;
-    // Rebuild markers because indices shifted
     rebuildTraceMarkers();
     renderActiveTrace();
     updateTraceControls();
@@ -1182,7 +1196,6 @@ function addTracePoint(latLng){
   updateTraceControls();
 }
 
-/* Rebuild all trace markers after a removal (rebinds listeners with fresh indices) */
 function rebuildTraceMarkers(){
   tempMarkers.forEach(m => m.setMap(null));
   tempMarkers = [];
@@ -1371,7 +1384,6 @@ function startEditingTrace(itemId){
   renderEditingShape();
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Mobile-friendly focus handling for keyboard
   if (IS_TOUCH){
     setTimeout(() => {
       input.focus();
@@ -1420,9 +1432,7 @@ function renderEditingShape(){
       unlockMapAfterMarkerDrag();
     });
 
-    // Desktop: right-click
     marker.addListener("rightclick", () => removeEditingVertex(i));
-    // Mobile + desktop: long-press
     attachLongPress(marker, () => removeEditingVertex(i));
 
     editingMarkers.push(marker);
@@ -1445,7 +1455,7 @@ function handleEdgeClick(latLng){
     if (d < bestDist){ bestDist = d; bestI = i; bestProjected = proj; }
   }
   const metersPerPixel = 156543.03392 * Math.cos(pt.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
-  const threshold = (IS_TOUCH ? 45 : 30) * metersPerPixel;   // more forgiving on touch
+  const threshold = (IS_TOUCH ? 45 : 30) * metersPerPixel;
   if (bestDist > threshold) return;
   editingCoords.splice(bestI + 1, 0, bestProjected);
   renderEditingShape();
@@ -1696,7 +1706,7 @@ async function fetchPlacesFromSheet(){
     lastRecordCount = allRecords.length;
     document.getElementById('recordCount').textContent = allRecords.length;
 
-    console.log(`[Places & Traces] ${roots.length} roots, ${traces.length - roots.length} sub-traces, ${pins.length} pins.`);
+    console.log(`[Territory Mapper] ${roots.length} roots, ${traces.length - roots.length} sub-traces, ${pins.length} pins.`);
     return allRecords.length;
 
   } catch (error){
