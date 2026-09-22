@@ -24,6 +24,11 @@ body{
 
 /* ============================================================ ROLE VISIBILITY */
 body[data-role="loading"] [data-role="mapper"],
+body[data-role="loading"] [data-role="viewer"],
+body[data-role="mapper"]  [data-role="viewer"],
+body[data-role="admin"]   [data-role="viewer"] {
+  display: none !important;
+}
 body[data-role="viewer"]  [data-role="mapper"] {
   display: none !important;
 }
@@ -169,6 +174,7 @@ body[data-role="viewer"]  [data-role="mapper"] {
 }
 .recent-badge[hidden]{display:none}
 
+/* ============================================================ BUTTONS */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   width:100%;padding:11px 14px;border:none;border-radius:var(--r-md);
@@ -313,11 +319,105 @@ body[data-role="viewer"]  [data-role="mapper"] {
 .pin-row .pin-del:hover{background:var(--danger);color:#fff}
 .pin-row.filtered-out{display:none}
 
+/* Comment-count badge inside pin rows */
+.pin-row .pin-cmt-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 6px;border-radius:99px;
+  background:#e0efff;color:#1d4ed8;
+  font-size:.6rem;font-weight:800;letter-spacing:.02em;
+  flex-shrink:0;
+}
+.pin-row .pin-cmt-badge svg{width:10px;height:10px;display:block}
+
 .show-pins-btn{background:transparent;border:none;padding:4px 8px;border-radius:99px;font-family:inherit;font-size:.66rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--accent);cursor:pointer;transition:background .14s;margin-left:auto;flex-shrink:0}
 .show-pins-btn:hover{background:var(--accent-soft)}
 .hint-empty{font-size:.72rem;color:var(--text-faint);padding:8px 12px;text-align:center}
 .empty{text-align:center;padding:36px 20px;color:var(--text-faint);font-size:.82rem;line-height:1.6}
 .empty .big-ic{margin:0 auto 14px;width:56px;height:56px;color:#cbd5e1;display:grid;place-items:center}
+
+/* ============================================================ COVERED AREAS (nested) */
+.coverage-list{
+  display:flex;flex-direction:column;gap:3px;
+  padding:0 12px 10px 12px;
+}
+.coverage-list.nested{padding:0 10px 8px 10px}
+.coverage-sub{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:var(--r-sm);
+  background:#f0f7ff;border-left:3px solid #2563eb;
+  font-size:.72rem;cursor:pointer;transition:background .14s;
+  touch-action:manipulation;
+}
+.coverage-sub:hover{background:#e0efff}
+.coverage-sub.nested{background:#f5faff;border-left-color:#93c5fd}
+.coverage-sub .cov-icon{flex-shrink:0;color:#2563eb;display:grid;place-items:center}
+.coverage-sub.nested .cov-icon{color:#60a5fa}
+.coverage-sub .cov-date{
+  flex-shrink:0;
+  font-family:Georgia,'Times New Roman',serif;
+  font-style:italic;font-weight:700;
+  color:#1e40af;letter-spacing:-0.01em;
+}
+.coverage-sub.nested .cov-date{color:#1d4ed8;font-weight:600}
+.coverage-sub .cov-meta{
+  flex:1;min-width:0;color:var(--text-dim);
+  font-size:.66rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.coverage-sub .zoom-btn,.coverage-sub .pin-del{padding:4px;flex-shrink:0}
+.coverage-sub .pin-del{
+  background:transparent;border:none;color:var(--text-faint);
+  display:grid;place-items:center;border-radius:5px;cursor:pointer;
+  transition:all .14s;
+}
+.coverage-sub .pin-del:hover{background:var(--danger);color:#fff}
+
+/* ============================================================ REQUESTS */
+.request-row{
+  display:flex;flex-direction:column;gap:6px;
+  padding:10px 11px;
+  border-radius:var(--r-md);
+  border:1px solid var(--border);
+  background:var(--surface);
+  margin-bottom:6px;
+  transition:border-color .14s,box-shadow .14s;
+}
+.request-row:hover{border-color:#cfd8e4;box-shadow:var(--sh-1)}
+.request-row.pending{border-left:3px solid #f59e0b}
+.request-row.approved{border-left:3px solid #16a34a;opacity:.72}
+.request-row.rejected{border-left:3px solid #dc2626;opacity:.65}
+.request-head{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.request-title{
+  font-size:.78rem;font-weight:650;letter-spacing:-.005em;
+  color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  flex:1;min-width:0;
+}
+.request-status{
+  font-size:.58rem;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;padding:3px 8px;border-radius:99px;flex-shrink:0;
+}
+.request-status.pending{background:#fef3c7;color:#b45309}
+.request-status.approved{background:#dcfce7;color:#15803d}
+.request-status.rejected{background:#fee2e2;color:#b91c1c}
+.request-notes{
+  font-size:.7rem;color:var(--text-dim);line-height:1.45;
+  word-break:break-word;
+}
+.request-meta{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:8px;font-size:.62rem;color:var(--text-faint);
+}
+.request-actions{display:flex;gap:6px;margin-top:2px}
+.request-actions button{
+  flex:1;padding:7px 10px;border-radius:var(--r-sm);
+  font-family:inherit;font-size:.7rem;font-weight:700;
+  cursor:pointer;transition:all .14s;min-height:32px;
+}
+.request-approve{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.request-approve:hover{background:#bbf7d0}
+.request-reject{background:#fef2f2;color:var(--danger);border:1px solid #fecaca}
+.request-reject:hover{background:#fee2e2}
+.request-cancel{background:transparent;color:var(--text-dim);border:1px solid var(--border)}
+.request-cancel:hover{background:var(--surface-2);color:var(--text)}
 
 #mapWrap{flex:1;height:100%;min-width:0;position:relative;background:#e8eaed}
 #map{width:100%;height:100%}
@@ -754,6 +854,25 @@ body[data-role="viewer"]  [data-role="mapper"] {
 .pin-sheet-action:hover svg{stroke:var(--accent)}
 .pin-sheet-action span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
+/* Pin edit panel (inline in the sheet) */
+.pin-edit-panel{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  padding:14px;
+  margin-bottom:14px;
+  flex-shrink:0;
+}
+.pin-edit-panel[hidden]{display:none}
+.pin-edit-panel .field{margin-bottom:12px}
+.pin-edit-panel .field:last-of-type{margin-bottom:14px}
+.pin-edit-chips{
+  grid-template-columns:repeat(3,1fr);
+  margin-bottom:0;
+}
+.pin-edit-chips .chip{padding:8px 4px;min-height:auto;font-size:.68rem}
+.pin-edit-panel .subtype-chips{margin-bottom:0}
+
 .pin-sheet-divider{
   height:1px;background:var(--border);
   margin:16px 0 12px;
@@ -850,16 +969,6 @@ body[data-role="viewer"]  [data-role="mapper"] {
   color:var(--danger);
 }
 
-/* ============================================================ COVERAGE MODAL EXTRAS */
-#coverageModal input[type="date"]{
-  width:100%;padding:12px 14px;
-  border:1.5px solid var(--border);border-radius:var(--r-md);
-  font-family:inherit;font-size:16px;font-weight:600;color:var(--text);
-  background:var(--surface);outline:none;
-  transition:border-color .14s,box-shadow .14s;
-}
-#coverageModal input[type="date"]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
-
 /* ============================================================ AGGREGATE STAT CHIPS */
 .stat-chip{
   display:inline-flex;align-items:center;gap:5px;
@@ -870,6 +979,8 @@ body[data-role="viewer"]  [data-role="mapper"] {
 .stat-chip svg{width:13px;height:13px;display:block;flex-shrink:0}
 .stat-chip.trace{background:var(--accent-soft);color:var(--accent)}
 .stat-chip.coverage{background:#f1f5f9;color:#475569}
+.stat-chip.comments{background:#e0efff;color:#1d4ed8}
+.stat-chip.requests{background:#fef3c7;color:#b45309}
 
 .trace-notes{
   font-size:.74rem;color:var(--text-dim);line-height:1.55;
@@ -918,6 +1029,7 @@ body[data-role="viewer"]  [data-role="mapper"] {
   .admin-section-head h3{font-size:.88rem}
   .pin-sheet-card{padding-left:18px;padding-right:18px;max-height:88dvh}
   .pin-sheet-action{font-size:.66rem;padding:10px 4px;gap:5px}
+  .pin-sheet-action span:last-child{font-size:.6rem}
   .comment-del{opacity:1}
 }
 @media (max-width:480px){
@@ -932,71 +1044,3 @@ body[data-role="viewer"]  [data-role="mapper"] {
   .admin-section{padding:16px 14px}
   .pin-sheet-action span:last-child{font-size:.6rem}
 }
-
-/* ============================================================ COVERED AREAS (nested) */
-.coverage-list{
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 0 12px 10px 12px;
-}
-.coverage-list.nested{
-  padding: 0 10px 8px 10px;
-}
-.coverage-sub{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: var(--r-sm);
-  background: #f0f7ff;
-  border-left: 3px solid #2563eb;
-  font-size: .72rem;
-  cursor: pointer;
-  transition: background .14s;
-  touch-action: manipulation;
-}
-.coverage-sub:hover{ background: #e0efff; }
-.coverage-sub.nested{
-  background: #f5faff;
-  border-left-color: #93c5fd;
-}
-.coverage-sub .cov-icon{
-  flex-shrink: 0;
-  color: #2563eb;
-  display: grid; place-items: center;
-}
-.coverage-sub.nested .cov-icon{ color: #60a5fa; }
-.coverage-sub .cov-date{
-  flex-shrink: 0;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-style: italic;
-  font-weight: 700;
-  color: #1e40af;
-  letter-spacing: -0.01em;
-}
-.coverage-sub.nested .cov-date{ color: #1d4ed8; font-weight: 600; }
-.coverage-sub .cov-meta{
-  flex: 1;
-  min-width: 0;
-  color: var(--text-dim);
-  font-size: .66rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.coverage-sub .zoom-btn,
-.coverage-sub .pin-del{
-  padding: 4px;
-  flex-shrink: 0;
-}
-.coverage-sub .pin-del{
-  background: transparent;
-  border: none;
-  color: var(--text-faint);
-  display: grid; place-items: center;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all .14s;
-}
-.coverage-sub .pin-del:hover{ background: var(--danger); color: #fff; }

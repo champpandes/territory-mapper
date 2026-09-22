@@ -105,6 +105,32 @@
       </div>
     </div>
 
+    <!-- REQUEST A PIN (viewer only) -->
+    <div class="section" data-role="viewer">
+      <div class="sec-head"><span>Suggest a place</span></div>
+      <button id="requestModeBtn" class="btn btn-ghost" onclick="toggleRequestMode()">
+        <span class="ic" id="ic-request"></span> Request a pin
+      </button>
+      <div id="requestActiveControls" hidden>
+        <div class="mode-bar">
+          <span class="dot"></span>
+          <span class="txt" id="requestHintText">Tap the map to mark the spot</span>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-danger" onclick="cancelRequestMode()"><span class="ic" id="ic-x-req"></span> Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY REQUESTS / PENDING REQUESTS -->
+    <div class="section" id="requestsSection" hidden>
+      <div class="sec-head">
+        <span id="requestsHeader">Requests</span>
+        <span class="count" id="requestCount">0</span>
+      </div>
+      <div id="requestList"></div>
+    </div>
+
     <div class="section" id="editPanel" data-role="mapper" hidden>
       <div class="sec-head"><span>Editing shape</span></div>
       <div class="field">
@@ -292,7 +318,7 @@
             <span class="count" id="userCount">0</span>
           </div>
           <p class="admin-section-desc">
-            Change a role to grant or revoke access. <b>Viewers</b> can view the map, rename pins, comment, and mark covered areas. <b>Mappers</b> can add, edit, and delete pins and traces. <b>Admins</b> can do everything, including manage users here.
+            Change a role to grant or revoke access. <b>Viewers</b> can view the map, rename pins, comment, mark covered areas, and request new pins. <b>Mappers</b> can add, edit, and delete pins and traces. <b>Admins</b> can do everything, including manage users here.
           </p>
           <div class="search-bar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -327,14 +353,38 @@
       </button>
     </div>
 
+    <!-- Inline edit panel (hidden until Edit is tapped) -->
+    <div class="pin-edit-panel" id="pinEditPanel" hidden>
+      <div class="field">
+        <label>Type</label>
+        <div class="chips pin-edit-chips" id="pinEditTypeChips">
+          <button class="chip" data-type="House"><span class="emoji-ic" data-ic="home"></span>House</button>
+          <button class="chip" data-type="Store"><span class="emoji-ic" data-ic="store"></span>Store</button>
+          <button class="chip" data-type="Landmark"><span class="emoji-ic" data-ic="landmark"></span>Landmark</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Sub-type</label>
+        <div class="subtype-chips" id="pinEditSubtypeChips"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="pinEditCancel" type="button">Cancel</button>
+        <button class="btn btn-green" id="pinEditSave" type="button">Save changes</button>
+      </div>
+    </div>
+
     <div class="pin-sheet-actions">
       <button class="pin-sheet-action" id="pinSheetRename" type="button">
         <span class="ic" id="ic-pin-rename"></span>
         <span>Rename</span>
       </button>
+      <button class="pin-sheet-action" id="pinSheetEdit" type="button">
+        <span class="ic" id="ic-pin-edit-type"></span>
+        <span>Edit type</span>
+      </button>
       <button class="pin-sheet-action" id="pinSheetJump" type="button">
         <span class="ic" id="ic-pin-jump"></span>
-        <span>Jump to map</span>
+        <span>Jump</span>
       </button>
       <button class="pin-sheet-action" id="pinSheetShare" type="button">
         <span class="ic" id="ic-pin-share"></span>
@@ -389,6 +439,27 @@
   </div>
 </div>
 
+<!-- ============================================================ REQUEST PIN MODAL -->
+<div id="requestModal" class="modal-root" hidden>
+  <div class="modal-backdrop" id="requestModalBackdrop"></div>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <h3 class="modal-title">Request a pin</h3>
+    <p class="modal-msg">A mapper will review your request and add it to the map if it fits.</p>
+    <div class="field" style="margin-bottom:14px">
+      <label for="requestTitle">What is this place?</label>
+      <input type="text" id="requestTitle" maxlength="80" placeholder="e.g. Sari-sari store ni Aling Rosa" autocomplete="off">
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label for="requestNotes">Notes <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-faint)">(optional)</span></label>
+      <textarea id="requestNotes" maxlength="300" rows="3" placeholder="e.g. Blue gate, next to the basketball court"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="requestCancel" type="button">Cancel</button>
+      <button class="btn btn-primary" id="requestSave" type="button">Send request</button>
+    </div>
+  </div>
+</div>
+
 <div id="modalRoot" class="modal-root" hidden>
   <div class="modal-backdrop" id="modalBackdrop"></div>
   <div class="modal-card" role="dialog" aria-modal="true">
@@ -412,13 +483,9 @@
 
 <div id="toasts"></div>
 
-<!-- ============================================================ MAPS LOAD SHIM -->
-<!-- Defines window.initMap BEFORE Google's script can call it, so the callback
-     can never fire before app.js has finished loading. -->
 <script>
   window.__realInitMap = null;
   window.__initMapPending = false;
-
   window.initMap = function(){
     if (typeof window.__realInitMap === "function") {
       window.__realInitMap();
@@ -428,8 +495,6 @@
   };
 </script>
 
-<!-- Note: no `async` — only `defer`. This guarantees the Maps script runs
-     AFTER app.js (which is a normal blocking script) has executed. -->
 <script defer
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUZYpZJJ2rOPpKJx539Dxa8VsLtZC_tTs&libraries=geometry&callback=initMap&loading=async"></script>
 

@@ -26,7 +26,11 @@ const ICON_PATHS = {
   road:'M4 21L9 3M20 21L15 3M12 5v2M12 11v2M12 17v2',
   walk:'M12 4.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6M12 6.5v5.5M12 12l-3 3v6M12 12l4 3v6',
   flag:'M4 22V3M4 4h12l-2.5 4L16 12H4',
-  coverage:'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z'
+  coverage:'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
+  helpCircle:'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01',
+  check:'M20 6L9 17l-5-5',
+  x:'M18 6L6 18M6 6l12 12',
+  clock:'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 6v6l4 2'
 };
 
 const SUBTYPE_MARKER_PATHS = {
@@ -56,7 +60,8 @@ function renderStaticIcons(){
     'ic-pencil':'pencil','ic-undo-tr':'undo','ic-pan-tr':'pan',
     'ic-x-tr':'cancel','ic-save-tr':'save',
     'ic-coverage':'coverage','ic-undo-cov':'undo','ic-pan-cov':'pan','ic-x-cov':'cancel','ic-save-cov':'save',
-    'ic-pin-rename':'edit','ic-pin-jump':'target','ic-pin-share':'share','ic-pin-del':'trash'
+    'ic-pin-rename':'edit','ic-pin-edit-type':'pencil','ic-pin-jump':'target','ic-pin-share':'share','ic-pin-del':'trash',
+    'ic-request':'helpCircle','ic-x-req':'x'
   };
   Object.entries(map).forEach(([id, name]) => {
     const el = document.getElementById(id);
@@ -114,6 +119,7 @@ function loadStoredAuth(){
 function role(){ return currentUser ? currentUser.role : "viewer"; }
 function isMapper(){ return role() === "mapper" || role() === "admin"; }
 function isAdmin(){ return role() === "admin"; }
+function isViewer(){ return role() === "viewer"; }
 function applyRoleToBody(){ document.body.setAttribute("data-role", currentUser ? currentUser.role : "viewer"); }
 
 /* ============================================================ AUTH API */
@@ -365,15 +371,15 @@ const SUBTYPE_ICONS = {
 };
 let selectedSubtype = '';
 
-function renderSubtypeChips(type){
-  const container = document.getElementById('subtypeChips');
+function renderSubtypeChips(type, containerId = 'subtypeChips', selected = null){
+  const container = document.getElementById(containerId);
   if (!container) return;
   const list = PIN_SUBTYPES[type] || [];
-  if (list.length === 0){ container.innerHTML = ''; selectedSubtype = ''; return; }
-  if (!list.includes(selectedSubtype)) selectedSubtype = list[0];
+  if (list.length === 0){ container.innerHTML = ''; return; }
+  const current = selected !== null ? selected : selectedSubtype;
   container.innerHTML = list.map(s => {
     const ic = SUBTYPE_ICONS[s] || 'pin';
-    const active = s === selectedSubtype ? ' active' : '';
+    const active = s === current ? ' active' : '';
     return `<button class="subtype-chip${active}" type="button" data-subtype="${esc(s)}" title="${esc(s)}">
       ${svgIcon(ic, 14, 2.2)}
       <span class="st-label">${esc(s)}</span>
@@ -408,6 +414,7 @@ let map, clusterer;
 let userLocation = { lat: 13.5571, lng: 123.3650 };
 let isTracing = false;
 let isCoverage = false;
+let isRequesting = false;
 let pendingParentId = null;
 let pendingParentTrace = null;
 let subTraceParentOverlay = null;
@@ -422,6 +429,9 @@ let tempPinMarkers = [];
 let allRecords = [];
 let allTraces = [];
 let allCoverages = [];
+let allRequests = [];
+let allRequestMarkers = [];
+let pendingRequestMarker = null;
 let drawnOverlays = [];
 let coverageOverlays = [];
 let pinMarkerObjects = [];
@@ -443,12 +453,17 @@ let allUsersCache = [];
 
 let currentPinId = null;
 let currentPinComments = [];
+let currentEditPin = null;
+let currentEditType = '';
+let currentEditSubtype = '';
 
-// Coverage-specific state
+let commentCounts = {};
+let pinCommentBadges = [];
+
 let coveragePinEntries = [];
 let coverageHighlightMarkers = [];
-let rawPinData = [];              // undecorated pins from the sheet
-let lastPinClickTime = 0;         // guards against map click firing after pin click
+let rawPinData = [];
+let lastPinClickTime = 0;
 
 /* ============================================================ HAPTIC */
 function haptic(ms = 8){ if (navigator.vibrate) navigator.vibrate(ms); }
@@ -657,6 +672,16 @@ function projectPointOnSegment(p, a, b){
   return { lat: y / R * 180 / Math.PI, lng: x / (R * Math.cos(latRef)) * 180 / Math.PI };
 }
 
+function formatCoverageDate(raw){
+  if (!raw) return "—";
+  const s = String(raw).trim();
+  if (!s) return "—";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
 /* ============================================================ LONG-PRESS */
 function attachLongPress(marker, onLongPress, duration = 550){
   let timer = null;
@@ -780,6 +805,42 @@ function handleAuthExpired(){
   setTimeout(() => location.reload(), 1200);
 }
 
+/* ============================================================ COMMENT COUNTS */
+async function loadCommentCounts(){
+  try {
+    const res = await authPost({ action: 'commentCounts', token: currentToken });
+    if (res && res.result === 'success'){
+      commentCounts = res.counts || {};
+      applyCommentBadges();
+    }
+  } catch(e){ /* non-fatal */ }
+}
+function applyCommentBadges(){
+  pinCommentBadges.forEach(b => { if (b.marker) b.marker.setMap(null); });
+  pinCommentBadges = [];
+  Object.entries(commentCounts).forEach(([pinId, count]) => {
+    const entry = pinMarkerObjects.find(e => String(e.item.id) === String(pinId));
+    if (!entry) return;
+    const real = entry.realPos || entry.pos;
+    const div = document.createElement('div');
+    div.className = 'pin-cmt-badge';
+    div.style.cssText = 'position:absolute;transform:translate(-50%,-100%);pointer-events:none;background:#2563eb;color:#fff;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.25);white-space:nowrap;z-index:600';
+    div.textContent = String(count);
+    const overlay = new google.maps.OverlayView();
+    overlay.onAdd = function(){ this.getPanes().overlayMouseTarget.appendChild(div); };
+    overlay.draw = function(){
+      const proj = this.getProjection();
+      if (!proj) return;
+      const px = proj.fromLatLngToDivPixel(new google.maps.LatLng(real.lat - 0.00015, real.lng + 0.00015));
+      div.style.left = px.x + 'px';
+      div.style.top  = px.y + 'px';
+    };
+    overlay.onRemove = function(){ if (div.parentNode) div.parentNode.removeChild(div); };
+    overlay.setMap(map);
+    pinCommentBadges.push({ overlay, marker: overlay, pinId });
+  });
+}
+
 /* ============================================================ DRAFT */
 function saveDraft(){
   try {
@@ -867,22 +928,6 @@ function createTraceLabel(trace, pinCount){
   return { overlay, div, position: pos, traceId: String(trace.item.id) };
 }
 
-function formatCoverageDate(raw){
-  if (!raw) return "—";
-  const s = String(raw).trim();
-  if (!s) return "—";
-
-  // Try to parse it as a Date — this handles both "2026-09-22" and
-  // full ISO timestamps like "2026-09-21T16:00:00.000Z". Using the
-  // *local* timezone getters means the Philippines user sees the day
-  // they actually picked.
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return s;
-
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-}
-
 function createCoverageLabel(cov){
   let lat = 0, lng = 0;
   cov.coords.forEach(c => { lat += Number(c.lat); lng += Number(c.lng); });
@@ -917,13 +962,11 @@ function updateTraceLabelVisibility(){
 }
 
 /* ============================================================ PIN MARKER BUILDER */
-/* Re-renders pin markers. In coverage mode, pins sit at their TRUE locations
-   so tapping the pin you see adds exactly that pin. In normal mode, clusters
-   get fanned out so each is tappable. */
 function rebuildPinMarkers(){
   if (clusterer){ clusterer.clearMarkers(); clusterer = null; }
   pinMarkerObjects.forEach(e => { if (e.marker) e.marker.setMap(null); });
   pinMarkerObjects = [];
+  applyCommentBadges();
 
   const ordered = isCoverage ? rawPinData.map(p => ({ item:p.item, pos:p.pos, realPos:p.pos })) : declusterPins(rawPinData);
 
@@ -937,13 +980,12 @@ function rebuildPinMarkers(){
       const entry = pinMarkerObjects.find(e => e.marker === marker);
       if (!entry) return;
       if (isCoverage){ addPinToCoverage(entry); return; }
+      if (isRequesting) return;
       openPinSheet(entry.item.id);
     });
     pinMarkerObjects.push({
-      marker,
-      item: pinObj.item,
-      pos: pinObj.pos,
-      realPos: pinObj.realPos || pinObj.pos
+      marker, item: pinObj.item,
+      pos: pinObj.pos, realPos: pinObj.realPos || pinObj.pos
     });
   });
 
@@ -955,8 +997,9 @@ function rebuildPinMarkers(){
   } else {
     pinMarkerObjects.forEach(e => e.marker.setMap(map));
   }
-}
 
+  applyCommentBadges();
+}
 /* ============================================================ MAP */
 function initMap(){
   map = new google.maps.Map(document.getElementById("map"), {
@@ -976,10 +1019,13 @@ function initMap(){
     if (ignore) return;
     if (panMode) return;
 
+    if (isRequesting){
+      openRequestModal(e.latLng);
+      return;
+    }
+
     if (isCoverage){
-      // If a pin click just fired, don't process the same physical tap twice
       if (Date.now() - lastPinClickTime < 300) return;
-      // Fallback: snap to nearest pin within a generous radius
       const mpp = 156543.03392 * Math.cos(e.latLng.lat() * Math.PI / 180) / Math.pow(2, map.getZoom());
       const thresholdMeters = Math.max(35, 50 * mpp);
       const nearest = findNearestPin(e.latLng, thresholdMeters);
@@ -992,7 +1038,10 @@ function initMap(){
     else if (isPinning) addTempPin(e.latLng);
   });
 
-  map.addListener("zoom_changed", updateTraceLabelVisibility);
+  map.addListener("zoom_changed", () => {
+    updateTraceLabelVisibility();
+    applyCommentBadges();
+  });
 
   if (navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
@@ -1013,6 +1062,9 @@ function initMap(){
 
   restoreSidebarState();
   fetchPlacesFromSheet().then(() => {
+    loadCommentCounts();
+    loadRequests();
+
     const draft = loadDraft();
     if (draft && draft.points && draft.points.length > 0 && isMapper()){
       setTimeout(() => {
@@ -1065,8 +1117,8 @@ function jumpToPin(pinId){
 
 /* ============================================================ PAN MODE */
 function togglePanMode(){
-  if (!isTracing && !isPinning && !isCoverage){
-    toast("Start trace, coverage, or pin mode first to use pan mode", "info", 2400); return;
+  if (!isTracing && !isPinning && !isCoverage && !isRequesting){
+    toast("Start a drawing mode first to use pan mode", "info", 2400); return;
   }
   panMode = !panMode;
   updatePanUI();
@@ -1085,7 +1137,7 @@ function applyMarkerDraggability(){
   tempMarkers.forEach(m => m.setDraggable(shouldBeDraggable));
 }
 function updatePanUI(){
-  const inMode = isTracing || isPinning || isCoverage;
+  const inMode = isTracing || isPinning || isCoverage || isRequesting;
   const fab = document.getElementById('panFab');
   const fabIcon = document.getElementById('panFabIcon');
   const fabText = document.getElementById('panFabText');
@@ -1110,6 +1162,7 @@ function updatePanUI(){
   });
   if (isTracing) updateTraceControls();
   if (isCoverage) updateCoverageControls();
+  if (isRequesting) updateRequestControls();
 }
 function updateMapBadgeForCurrentMode(){
   if (isTracing){
@@ -1117,6 +1170,8 @@ function updateMapBadgeForCurrentMode(){
     else showMapBadge("Trace mode — tap the map to draw", true);
   } else if (isCoverage){
     showMapBadge("Coverage mode — tap pins to include them", true);
+  } else if (isRequesting){
+    showMapBadge("Request mode — tap the map to mark the spot", true);
   } else if (isPinning){
     showMapBadge("Pin mode — tap inside a traced area");
   }
@@ -1128,7 +1183,8 @@ document.getElementById('pinTypeChips').addEventListener('click', (e) => {
   if (!chip) return;
   document.querySelectorAll('#pinTypeChips .chip').forEach(c => c.classList.remove('active'));
   chip.classList.add('active');
-  renderSubtypeChips(chip.dataset.type);
+  selectedSubtype = '';
+  renderSubtypeChips(chip.dataset.type, 'subtypeChips', '');
   haptic(6);
 });
 document.getElementById('subtypeChips').addEventListener('click', (e) => {
@@ -1166,7 +1222,6 @@ function addPinToCoverage(entry){
     toast("That pin is already part of the coverage", "info", 1800);
     return;
   }
-
   const real = entry.realPos || entry.pos;
   const latLng = new google.maps.LatLng(real.lat, real.lng);
 
@@ -1174,18 +1229,13 @@ function addPinToCoverage(entry){
   const index = currentTracePoints.length;
   currentTracePoints.push(latLng);
   tempMarkers.push(createTraceMarker(latLng, index));
-
   coveragePinEntries.push(entry);
 
-  // Non-clickable highlight so it never steals taps from the pin underneath
   const hl = new google.maps.Marker({
     position: real, map, zIndex: 400, clickable: false,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 20,
-      fillColor: "#2563eb", fillOpacity: 0.20,
-      strokeColor: "#2563eb", strokeWeight: 2.5, strokeOpacity: 0.95
-    }
+    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 20,
+            fillColor: "#2563eb", fillOpacity: 0.20,
+            strokeColor: "#2563eb", strokeWeight: 2.5, strokeOpacity: 0.95 }
   });
   coverageHighlightMarkers.push(hl);
 
@@ -1200,6 +1250,7 @@ function toggleCoverage(){
   if (isCoverage){ cancelCoverage(); return; }
   if (isTracing){ toast("Finish or cancel your current trace first", "error"); return; }
   if (isPinning){ toast("Finish pinning first", "error"); return; }
+  if (isRequesting){ toast("Finish your request first", "error"); return; }
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
   if (rawPinData.length === 0){
     toast("No pins on the map yet — drop some pins first.", "error", 4000);
@@ -1216,11 +1267,11 @@ function toggleCoverage(){
   document.getElementById("coverageBtn").hidden = true;
   document.getElementById("pinModeBtn").disabled = true;
   document.getElementById("traceBtn").disabled = true;
+  const reqBtn = document.getElementById("requestModeBtn");
+  if (reqBtn) reqBtn.disabled = true;
   document.getElementById("coverageActiveControls").hidden = false;
 
-  // Re-render pins at their TRUE locations for accurate tapping
   rebuildPinMarkers();
-
   renderActiveTrace();
   updateCoverageControls();
   updatePanUI();
@@ -1231,6 +1282,7 @@ function toggleCoverage(){
 function updateCoverageControls(){
   const n = coveragePinEntries.length;
   const el = document.getElementById("coverageCountText");
+  if (!el) return;
   if (panMode){ el.textContent = "Pan mode — drag the map freely"; return; }
   if (n === 0) el.textContent = "Tap pins to include them";
   else if (n < 3) el.textContent = `${n} pin${n === 1 ? '' : 's'} selected — need at least 3`;
@@ -1264,9 +1316,10 @@ function resetCoverageMode(){
   document.getElementById("coverageBtn").hidden = false;
   document.getElementById("pinModeBtn").disabled = false;
   document.getElementById("traceBtn").disabled = false;
+  const reqBtn = document.getElementById("requestModeBtn");
+  if (reqBtn) reqBtn.disabled = false;
   document.getElementById("coverageActiveControls").hidden = true;
   document.getElementById("panFab").hidden = true;
-  // Restore declustered fan so clustered pins are individually tappable again
   rebuildPinMarkers();
   hideMapBadge();
 }
@@ -1341,11 +1394,308 @@ document.getElementById("coverageSave").addEventListener("click", async () => {
   });
 });
 
+/* ============================================================ REQUEST MODE */
+function toggleRequestMode(){
+  if (isRequesting){ cancelRequestMode(); return; }
+  if (isTracing){ toast("Finish or cancel your current trace first", "error"); return; }
+  if (isCoverage){ toast("Finish or cancel your coverage first", "error"); return; }
+  if (isEditing){ toast("Finish editing the shape first", "error"); return; }
+
+  isRequesting = true;
+  panMode = false;
+
+  document.getElementById("requestModeBtn").hidden = true;
+  document.getElementById("requestActiveControls").hidden = false;
+  document.getElementById("coverageBtn").disabled = true;
+
+  updateRequestControls();
+  updatePanUI();
+  showMapBadge("Request mode — tap the map to mark the spot", true);
+  haptic(12);
+}
+function updateRequestControls(){
+  const el = document.getElementById("requestHintText");
+  if (!el) return;
+  el.textContent = panMode ? "Pan mode — drag the map freely" : "Tap the map to mark the spot";
+}
+function cancelRequestMode(){
+  isRequesting = false;
+  panMode = false;
+  if (pendingRequestMarker){ pendingRequestMarker.setMap(null); pendingRequestMarker = null; }
+  document.getElementById("requestModeBtn").hidden = false;
+  document.getElementById("requestActiveControls").hidden = true;
+  document.getElementById("coverageBtn").disabled = false;
+  document.getElementById("panFab").hidden = true;
+  hideMapBadge();
+}
+function openRequestModal(latLng){
+  const modal = document.getElementById("requestModal");
+  const titleInput = document.getElementById("requestTitle");
+  const notesInput = document.getElementById("requestNotes");
+  titleInput.value = "";
+  notesInput.value = "";
+
+  if (pendingRequestMarker){ pendingRequestMarker.setMap(null); }
+  pendingRequestMarker = new google.maps.Marker({
+    position: latLng, map, zIndex: 1500, animation: google.maps.Animation.DROP,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE, scale: 10,
+      fillColor: "#f59e0b", fillOpacity: 0.9,
+      strokeColor: "#ffffff", strokeWeight: 3
+    }
+  });
+  pendingRequestMarker.set('requestLatLng', latLng);
+
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+  setTimeout(() => titleInput.focus(), 80);
+}
+function closeRequestModal(){
+  document.getElementById("requestModal").hidden = true;
+  document.body.style.overflow = "";
+}
+document.getElementById("requestCancel").addEventListener("click", () => {
+  closeRequestModal();
+  if (pendingRequestMarker){ pendingRequestMarker.setMap(null); pendingRequestMarker = null; }
+});
+document.getElementById("requestModalBackdrop").addEventListener("click", () => {
+  closeRequestModal();
+  if (pendingRequestMarker){ pendingRequestMarker.setMap(null); pendingRequestMarker = null; }
+});
+document.getElementById("requestSave").addEventListener("click", async () => {
+  const titleInput = document.getElementById("requestTitle");
+  const notesInput = document.getElementById("requestNotes");
+  const title = titleInput.value.trim();
+  const notes = notesInput.value.trim();
+  if (!title){ toast("Please give this place a name", "error"); titleInput.focus(); return; }
+  if (!pendingRequestMarker){ toast("No location selected", "error"); return; }
+
+  const ll = pendingRequestMarker.get('requestLatLng');
+  const btn = document.getElementById("requestSave");
+  await withButtonBusy(btn, "Sending…", async () => {
+    try {
+      const res = await authPost({
+        action: 'createRequest',
+        latitude: ll.lat(), longitude: ll.lng(),
+        title, notes,
+        token: currentToken
+      });
+      if (!res || res.result !== 'success'){
+        toast((res && res.message) || "Could not send request", "error", 4000);
+        return;
+      }
+      toast("Request sent — a mapper will review it", "success", 3500);
+      closeRequestModal();
+      if (pendingRequestMarker){ pendingRequestMarker.setMap(null); pendingRequestMarker = null; }
+      cancelRequestMode();
+      loadRequests();
+      haptic(15);
+    } catch(e){
+      toast("Could not send request: " + e.message, "error", 5000);
+    }
+  });
+});
+
+/* -------- Requests sidebar list -------- */
+async function loadRequests(){
+  try {
+    const scope = isMapper() ? 'pending' : 'mine';
+    const res = await authPost({ action: 'listRequests', scope, token: currentToken });
+    if (!res || res.result !== 'success'){ allRequests = []; }
+    else allRequests = res.requests || [];
+    renderRequestsSection();
+    renderRequestMarkers();
+  } catch(e){
+    allRequests = [];
+    renderRequestsSection();
+    renderRequestMarkers();
+  }
+}
+function renderRequestMarkers(){
+  allRequestMarkers.forEach(m => m.setMap(null));
+  allRequestMarkers = [];
+
+  const relevant = isMapper() ? allRequests.filter(r => r.status === 'pending') : allRequests;
+  relevant.forEach(req => {
+    const color = req.status === 'pending' ? '#f59e0b' : (req.status === 'approved' ? '#16a34a' : '#dc2626');
+    const marker = new google.maps.Marker({
+      position: { lat: req.latitude, lng: req.longitude },
+      map, zIndex: 900, opacity: req.status === 'pending' ? 1 : 0.65,
+      icon: {
+        path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z',
+        fillColor: color, fillOpacity: 1,
+        strokeColor: '#ffffff', strokeWeight: 2,
+        scale: 0.85
+      }
+    });
+    marker.addListener('click', () => {
+      if (req.status === 'pending' && isMapper()){
+        handleApproveRequest(req, marker);
+      } else {
+        toast(`${req.title} · by ${req.displayName}`, "info", 2400);
+      }
+    });
+    allRequestMarkers.push(marker);
+  });
+}
+function renderRequestsSection(){
+  const section = document.getElementById('requestsSection');
+  const listEl = document.getElementById('requestList');
+  const countEl = document.getElementById('requestCount');
+  const headerEl = document.getElementById('requestsHeader');
+  if (!section || !listEl) return;
+
+  const relevant = isMapper()
+    ? allRequests.filter(r => r.status === 'pending')
+    : allRequests;
+
+  if (relevant.length === 0){
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  headerEl.textContent = isMapper() ? "Pending pin requests" : "My requests";
+  countEl.textContent = String(relevant.length);
+
+  listEl.innerHTML = relevant.map(req => {
+    const when = formatRelativeTime(req.createdAt);
+    const actions = isMapper() && req.status === 'pending'
+      ? `<div class="request-actions">
+           <button class="request-approve" data-req-approve="${esc(req.id)}">Approve</button>
+           <button class="request-reject" data-req-reject="${esc(req.id)}">Reject</button>
+         </div>`
+      : (req.status === 'pending' && String(req.userId) === String(currentUser?.id)
+        ? `<div class="request-actions">
+             <button class="request-cancel" data-req-cancel="${esc(req.id)}">Cancel my request</button>
+           </div>`
+        : '');
+
+    return `
+      <div class="request-row ${esc(req.status)}" data-request-id="${esc(req.id)}">
+        <div class="request-head">
+          <span class="request-title">${esc(req.title)}</span>
+          <span class="request-status ${esc(req.status)}">${esc(req.status)}</span>
+        </div>
+        ${req.notes ? `<div class="request-notes">${esc(req.notes)}</div>` : ''}
+        <div class="request-meta">
+          <span>${esc(req.displayName)} · ${esc(when)}</span>
+          <span>${req.latitude.toFixed(5)}, ${req.longitude.toFixed(5)}</span>
+        </div>
+        ${actions}
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('requestList')?.addEventListener('click', async (e) => {
+  const approveBtn = e.target.closest('[data-req-approve]');
+  const rejectBtn = e.target.closest('[data-req-reject]');
+  const cancelBtn = e.target.closest('[data-req-cancel]');
+
+  if (approveBtn){
+    const req = allRequests.find(r => String(r.id) === approveBtn.dataset.reqApprove);
+    if (req) handleApproveRequest(req);
+    return;
+  }
+  if (rejectBtn){
+    const req = allRequests.find(r => String(r.id) === rejectBtn.dataset.reqReject);
+    if (req) handleRejectRequest(req);
+    return;
+  }
+  if (cancelBtn){
+    const req = allRequests.find(r => String(r.id) === cancelBtn.dataset.reqCancel);
+    if (!req) return;
+    const ok = await showConfirm({
+      title: 'Cancel this request?', message: `"${req.title}" will be removed.`,
+      okText: 'Cancel request', cancelText: 'Keep'
+    });
+    if (!ok) return;
+    try {
+      const res = await authPost({ action: 'cancelRequest', requestId: req.id, token: currentToken });
+      if (!res || res.result !== 'success'){ toast((res && res.message) || 'Failed', 'error', 4000); return; }
+      toast('Request cancelled', 'success', 2200);
+      loadRequests();
+    } catch(err){ toast('Failed: ' + err.message, 'error', 5000); }
+  }
+});
+
+async function handleApproveRequest(req){
+  // Ask for category + subtype
+  const result = await showModal({
+    title: 'Approve request',
+    message: `Add "${req.title}" to the map as a pin. Choose a category.`,
+    input: 'Landmark', // not shown; using the prompt below instead
+    okText: 'Choose category…',
+    cancelText: 'Cancel'
+  });
+  if (!result) return;
+
+  // Simpler UX: use a lightweight inline chooser. Fallback to a prompt.
+  const typeChoice = await showModal({
+    title: 'Category',
+    message: 'What kind of place is this? Type: House, Store, or Landmark.',
+    input: 'House',
+    okText: 'Next', cancelText: 'Cancel'
+  });
+  if (!typeChoice) return;
+  const typeRaw = (typeChoice.input || '').trim();
+  const type = ['House','Store','Landmark'].find(t => t.toLowerCase() === typeRaw.toLowerCase());
+  if (!type){ toast("Please enter House, Store, or Landmark", "error", 3500); return; }
+
+  const subtypes = PIN_SUBTYPES[type] || [];
+  let subtype = '';
+  if (subtypes.length){
+    const subChoice = await showModal({
+      title: 'Sub-type',
+      message: `${subtypes.join(' · ')}\nLeave blank for none.`,
+      input: subtypes[0],
+      okText: 'Approve & create pin', cancelText: 'Cancel'
+    });
+    if (!subChoice) return;
+    const sRaw = (subChoice.input || '').trim();
+    subtype = subtypes.find(s => s.toLowerCase() === sRaw.toLowerCase()) || '';
+  }
+
+  try {
+    const res = await authPost({
+      action: 'approveRequest',
+      requestId: req.id, type, subtype,
+      token: currentToken
+    });
+    if (!res || res.result !== 'success'){
+      toast((res && res.message) || 'Could not approve', 'error', 4500);
+      return;
+    }
+    haptic(20);
+    toast(`Approved — "${req.title}" is now on the map`, 'success', 4000);
+    clearOverlays();
+    await fetchPlacesFromSheet();
+    loadRequests();
+    loadCommentCounts();
+  } catch(e){
+    toast('Approve failed: ' + e.message, 'error', 5000);
+  }
+}
+
+async function handleRejectRequest(req){
+  const ok = await showConfirm({
+    title: 'Reject this request?',
+    message: `"${req.title}" will be marked as rejected.`,
+    okText: 'Reject', cancelText: 'Cancel'
+  });
+  if (!ok) return;
+  try {
+    const res = await authPost({ action: 'rejectRequest', requestId: req.id, token: currentToken });
+    if (!res || res.result !== 'success'){ toast((res && res.message) || 'Failed', 'error', 4000); return; }
+    toast('Rejected', 'success', 2200);
+    loadRequests();
+  } catch(e){ toast('Failed: ' + e.message, 'error', 5000); }
+}
+
 /* ============================================================ PIN MODE */
 function togglePinMode(){
   if (!isMapper()){ toast("You don't have permission to add pins", "error"); return; }
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-  if (isTracing || isCoverage){ toast("Finish or cancel your current drawing first", "error"); return; }
+  if (isTracing || isCoverage || isRequesting){ toast("Finish or cancel your current action first", "error"); return; }
   if (allTraces.length === 0){ toast("No traced areas yet — draw a trace first.", "error", 4000); return; }
   isPinning = true; currentTempPins = [];
   panMode = false;
@@ -1424,6 +1774,7 @@ async function finishPinning(btn){
     else toast(`${n} pin(s) submitted — refreshing…`, "success");
     resetPinMode();
     const ok = await refreshUntil(expectedTotal);
+    loadCommentCounts();
     toast(ok ? `Synced — ${n} new pin(s)` : "Saved, but the list has not updated. Tap Refresh.",
           ok ? "success" : "error", 5000);
   });
@@ -1447,23 +1798,15 @@ function openPinSheet(pinId){
   if (!entry){ toast("Pin not found", "error"); return; }
 
   currentPinId = String(pinId);
+  currentEditPin = entry.item;
   const sheet = document.getElementById("pinSheet");
   sheet.hidden = false;
   document.body.style.overflow = "hidden";
 
-  const item = entry.item;
-  const typeLabel = item.type || 'Pin';
-  const subtypeLabel = item.subtype || '';
-  const rawTitle = (item.title || '').trim();
-  const isCustomName = rawTitle && rawTitle !== typeLabel && rawTitle !== subtypeLabel;
-  const displayName = isCustomName ? rawTitle : (subtypeLabel || typeLabel);
-  const fullType = subtypeLabel ? `${typeLabel} · ${subtypeLabel}` : typeLabel;
+  refreshPinSheetHeader(entry.item);
 
-  const iconEl = document.getElementById("pinSheetIcon");
-  if (iconEl) iconEl.innerHTML = svgIcon(SUBTYPE_ICONS[subtypeLabel] || (typeLabel.toLowerCase().includes('house') ? 'home' : (typeLabel.toLowerCase().includes('store') ? 'store' : 'landmark')), 22, 2);
-
-  document.getElementById("pinSheetName").textContent = displayName;
-  document.getElementById("pinSheetType").textContent = fullType;
+  document.getElementById("pinEditPanel").hidden = true;
+  document.getElementById("pinSheetActions").style.display = "";
 
   document.getElementById("pinSheetFooter").hidden = !isMapper();
 
@@ -1475,6 +1818,24 @@ function openPinSheet(pinId){
   loadComments(pinId);
   haptic(8);
 }
+function refreshPinSheetHeader(item){
+  const typeLabel = item.type || 'Pin';
+  const subtypeLabel = item.subtype || '';
+  const rawTitle = (item.title || '').trim();
+  const isCustomName = rawTitle && rawTitle !== typeLabel && rawTitle !== subtypeLabel;
+  const displayName = isCustomName ? rawTitle : (subtypeLabel || typeLabel);
+  const fullType = subtypeLabel ? `${typeLabel} · ${subtypeLabel}` : typeLabel;
+
+  const iconEl = document.getElementById("pinSheetIcon");
+  if (iconEl) iconEl.innerHTML = svgIcon(
+    SUBTYPE_ICONS[subtypeLabel] ||
+    (typeLabel.toLowerCase().includes('house') ? 'home' :
+     typeLabel.toLowerCase().includes('store') ? 'store' : 'landmark'),
+    22, 2);
+
+  document.getElementById("pinSheetName").textContent = displayName;
+  document.getElementById("pinSheetType").textContent = fullType;
+}
 function closePinSheet(){
   const sheet = document.getElementById("pinSheet");
   if (!sheet) return;
@@ -1482,6 +1843,7 @@ function closePinSheet(){
   document.body.style.overflow = "";
   currentPinId = null;
   currentPinComments = [];
+  currentEditPin = null;
 }
 async function loadComments(pinId){
   const listEl = document.getElementById("pinSheetComments");
@@ -1557,6 +1919,10 @@ document.getElementById("pinSheetRename").addEventListener("click", () => {
   closePinSheet();
   renamePin(currentPinId);
 });
+document.getElementById("pinSheetEdit").addEventListener("click", () => {
+  if (!currentEditPin) return;
+  openPinEditPanel();
+});
 document.getElementById("pinSheetJump").addEventListener("click", () => {
   if (!currentPinId) return;
   jumpToPin(currentPinId);
@@ -1604,6 +1970,9 @@ async function postComment(){
     textarea.value = "";
     currentPinComments.push(res.comment);
     renderComments();
+    // Bump the badge count locally
+    commentCounts[currentPinId] = (commentCounts[currentPinId] || 0) + 1;
+    applyCommentBadges();
     haptic(10);
   } catch(e){
     toast('Could not post comment: ' + e.message, 'error', 5000);
@@ -1627,12 +1996,87 @@ document.getElementById("pinSheetComments").addEventListener("click", async (e) 
     if (!res || res.result !== 'success'){ toast((res && res.message) || 'Delete failed', 'error', 4000); return; }
     currentPinComments = currentPinComments.filter(c => String(c.id) !== String(commentId));
     renderComments();
+    if (currentPinId){
+      commentCounts[currentPinId] = Math.max(0, (commentCounts[currentPinId] || 1) - 1);
+      if (commentCounts[currentPinId] === 0) delete commentCounts[currentPinId];
+      applyCommentBadges();
+    }
     toast("Comment deleted", "success", 1800);
   } catch(err){
     toast('Delete failed: ' + err.message, 'error', 5000);
   }
 });
 
+/* -------- Pin edit (type/subtype) -------- */
+function openPinEditPanel(){
+  const panel = document.getElementById("pinEditPanel");
+  if (!panel || !currentEditPin) return;
+
+  currentEditType = currentEditPin.type || 'Landmark';
+  currentEditSubtype = currentEditPin.subtype || '';
+
+  // Mark the current type chip
+  document.querySelectorAll('#pinEditTypeChips .chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.type === currentEditType);
+  });
+
+  // Populate subtypes based on current type
+  renderSubtypeChips(currentEditType, 'pinEditSubtypeChips', currentEditSubtype);
+
+  panel.hidden = false;
+  // Collapse the action buttons while editing
+  document.getElementById("pinSheetActions").style.display = "none";
+  haptic(6);
+}
+document.getElementById('pinEditTypeChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#pinEditTypeChips .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  currentEditType = chip.dataset.type;
+  currentEditSubtype = '';
+  renderSubtypeChips(currentEditType, 'pinEditSubtypeChips', '');
+  haptic(4);
+});
+document.getElementById('pinEditSubtypeChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.subtype-chip');
+  if (!chip) return;
+  currentEditSubtype = chip.dataset.subtype || '';
+  document.querySelectorAll('#pinEditSubtypeChips .subtype-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.subtype === currentEditSubtype);
+  });
+  haptic(4);
+});
+document.getElementById('pinEditCancel').addEventListener('click', () => {
+  document.getElementById("pinEditPanel").hidden = true;
+  document.getElementById("pinSheetActions").style.display = "";
+});
+document.getElementById('pinEditSave').addEventListener('click', async () => {
+  if (!currentEditPin) return;
+  const btn = document.getElementById('pinEditSave');
+  const updated = {
+    ...currentEditPin,
+    type: currentEditType,
+    subtype: currentEditSubtype
+  };
+  await withButtonBusy(btn, "Saving…", async () => {
+    try {
+      await submitToSheet(updated);
+      haptic(20);
+      toast("Pin updated", "success", 2200);
+      currentEditPin = updated;
+      refreshPinSheetHeader(updated);
+      document.getElementById("pinEditPanel").hidden = true;
+      document.getElementById("pinSheetActions").style.display = "";
+      await new Promise(r => setTimeout(r, 400));
+      clearOverlays();
+      await fetchPlacesFromSheet();
+      loadCommentCounts();
+    } catch(e){
+      toast("Save failed: " + (e.message || "network error"), "error", 5000);
+    }
+  });
+});
 /* ============================================================ RENAME PIN */
 async function renamePin(pinId){
   const entry = pinMarkerObjects.find(e => String(e.item.id) === String(pinId));
@@ -1666,6 +2110,7 @@ async function renamePin(pinId){
     await new Promise(r => setTimeout(r, 500));
     clearOverlays();
     await fetchPlacesFromSheet();
+    loadCommentCounts();
   } catch(e){
     console.error("Rename failed:", e);
     toast("Rename failed: " + (e.message || "network error"), "error", 5000);
@@ -1678,7 +2123,7 @@ function toggleTracing(){ startTracing(null); }
 function startTracing(parentId, silent){
   if (!isMapper()){ toast("You don't have permission to trace", "error"); return; }
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-  if (isPinning || isCoverage){ toast("Finish your current action first", "error"); return; }
+  if (isPinning || isCoverage || isRequesting){ toast("Finish your current action first", "error"); return; }
   if (isTracing) return;
 
   pendingParentId = parentId ? String(parentId) : null;
@@ -1802,7 +2247,6 @@ function createTraceMarker(latLng, index){
     }
   });
   if (isCoverage){
-    // Non-draggable; still long-pressable to remove
     attachLongPress(marker, async () => {
       const ok = await showConfirm({
         title: 'Remove this pin from coverage?',
@@ -1959,6 +2403,7 @@ function performGlobalUndo(){
 function updateTraceControls(){
   const n = currentTracePoints.length;
   const el = document.getElementById("traceCountText");
+  if (!el) return;
   if (panMode){ el.textContent = "Pan mode — drag the map freely"; return; }
   if (pendingParentTrace){
     el.textContent = `Inside "${pendingParentTrace.item.title}" · ${n} point${n === 1 ? '' : 's'}`;
@@ -2072,7 +2517,7 @@ function resetTraceMode(){
 /* ============================================================ EDIT MODE */
 function startEditingTrace(itemId){
   if (!isMapper()){ toast("You don't have permission to edit", "error"); return; }
-  if (isPinning || isTracing || isCoverage){ toast("Finish your current action first", "error"); return; }
+  if (isPinning || isTracing || isCoverage || isRequesting){ toast("Finish your current action first", "error"); return; }
   if (isEditing){ toast("Already editing a shape", "error"); return; }
 
   const t = allTraces.find(x => String(x.item.id) === String(itemId));
@@ -2410,6 +2855,8 @@ function clearOverlays(){
   if (clusterer) { clusterer.clearMarkers(); clusterer = null; }
   pinMarkerObjects.forEach(e => { if (e.marker) e.marker.setMap(null); });
   pinMarkerObjects = [];
+  pinCommentBadges.forEach(b => { if (b.marker) b.marker.setMap(null); });
+  pinCommentBadges = [];
   if (lastJumpMarker){ lastJumpMarker.setMap(null); lastJumpMarker = null; }
 }
 async function manualRefresh(btn){
@@ -2418,6 +2865,8 @@ async function manualRefresh(btn){
     try {
       clearOverlays();
       const count = await fetchPlacesFromSheet();
+      loadCommentCounts();
+      loadRequests();
       toast(`Loaded ${count} record${count === 1 ? '' : 's'}`, "success");
       if (isAdmin() && !document.getElementById('adminRoot').hidden) loadUsersIntoAdmin();
     } catch(e){ toast("Refresh failed", "error"); }
@@ -2526,13 +2975,11 @@ async function fetchPlacesFromSheet(){
       }
       drawnOverlays.push(poly);
     });
-    // Attach each coverage to the *root* trace that contains it.
-    // Uses geometric containment (centroid inside polygon), then walks up
-    // to the top-level parent so coverages always land under a MAIN trace.
+
+    // Attach coverages to their root trace via centroid containment
     const coveragesByRootId = new Map();
     coverages.forEach(cov => {
       if (cov.coords.length < 3) return;
-
       let lat = 0, lng = 0;
       cov.coords.forEach(p => { lat += Number(p.lat); lng += Number(p.lng); });
       const centroid = new google.maps.LatLng(lat / cov.coords.length, lng / cov.coords.length);
@@ -2544,7 +2991,6 @@ async function fetchPlacesFromSheet(){
       }
       if (!containing) return;
 
-      // Walk up to the top-level parent
       let root = containing;
       let guard = 0;
       while (root.parentId && guard++ < 20){
@@ -2574,7 +3020,6 @@ async function fetchPlacesFromSheet(){
       featureIndex.set(String(pinObj.item.id), { kind:'pin', pos: pinObj.pos });
     });
 
-    // Store raw pin data; rebuildPinMarkers() chooses positions based on mode
     rawPinData = pins.map(p => ({ item: p.item, pos: p.pos, realPos: p.pos }));
     rebuildPinMarkers();
 
@@ -2616,11 +3061,13 @@ function renderAggregateCounts(traces, pins, coverages){
   const subs  = traces.filter(t =>  t.parentId).length;
   const counts = countPinsByType(pins);
   const covCount = (coverages || []).length;
+  const totalComments = Object.values(commentCounts).reduce((a,b) => a+b, 0);
 
   const chips = [];
   if (mains) chips.push(`<span class="stat-chip trace">${mains} area${mains === 1 ? '' : 's'}</span>`);
   if (subs)  chips.push(`<span class="stat-chip">${subs} sub-area${subs === 1 ? '' : 's'}</span>`);
   if (covCount) chips.push(`<span class="stat-chip coverage">${covCount} covered</span>`);
+  if (totalComments) chips.push(`<span class="stat-chip comments">${svgIcon('comment',12,2.2)}<span>${totalComments}</span></span>`);
   if (counts.house)    chips.push(`<span class="pin-chip house">${svgIcon('home',13,2.2)}<span>${counts.house}</span></span>`);
   if (counts.store)    chips.push(`<span class="pin-chip store">${svgIcon('store',13,2.2)}<span>${counts.store}</span></span>`);
   if (counts.landmark) chips.push(`<span class="pin-chip landmark">${svgIcon('landmark',13,2.2)}<span>${counts.landmark}</span></span>`);
@@ -2712,6 +3159,25 @@ function traceActionButtons(id, title, isSub){
   `;
 }
 
+function renderCoverageRowHtml(cov, isSub){
+  const date = formatCoverageDate(cov.item.coveredAt);
+  const guide = cov.item.guide || "—";
+  const pinCount = String(cov.item.pinIds || "").split(",").filter(s => s.trim()).length;
+  const searchText = (date + ' ' + guide + ' coverage').toLowerCase();
+  const delBtn = isMapper()
+    ? `<button class="pin-del" data-del="${esc(cov.item.id)}" data-del-title="Covered ${esc(date)}" data-del-kind="coverage" title="Delete">${svgIcon('trash',12)}</button>`
+    : '';
+  return `
+    <div class="coverage-sub${isSub ? ' nested' : ''}" data-coverage-id="${esc(cov.item.id)}" data-search="${esc(searchText)}">
+      <span class="cov-icon">${svgIcon('target', 12, 2.2)}</span>
+      <span class="cov-date">${esc(date)}</span>
+      <span class="cov-meta">${pinCount} pin${pinCount === 1 ? '' : 's'} · ${esc(guide)}</span>
+      <button class="zoom-btn" data-zoom="${esc(cov.item.id)}" title="Zoom">${svgIcon('target',12)}</button>
+      ${delBtn}
+    </div>
+  `;
+}
+
 function renderParentGroup(rootTrace, children, directPins, pinsByTraceId, coveragesByRootId){
   const container = document.getElementById("listContainer");
   const group = document.createElement("div");
@@ -2783,7 +3249,10 @@ function renderPinDetails(pins, key){
     if (isCustomName) badgeText = subtypeLabel ? `${typeLabel} · ${subtypeLabel}` : typeLabel;
     else if (subtypeLabel) badgeText = typeLabel;
     const searchText = (rawTitle + ' ' + typeLabel + ' ' + subtypeLabel).toLowerCase();
-    const commentIcon = `<span class="pin-go" style="margin-right:2px;opacity:.65">${svgIcon('comment', 13, 2)}</span>`;
+    const cmtCount = commentCounts[String(p.item.id)] || 0;
+    const cmtBadge = cmtCount
+      ? `<span class="pin-cmt-badge">${svgIcon('comment',10,2.4)}<span>${cmtCount}</span></span>`
+      : '';
     return `
       <div class="pin-row" data-goto-pin="${esc(p.item.id)}" data-search="${esc(searchText)}">
         <span class="pin-dot" style="background:${color}"></span>
@@ -2791,7 +3260,7 @@ function renderPinDetails(pins, key){
           <span class="pin-name">${esc(displayName)}</span>
           ${badgeText ? `<span class="pin-type-small">${esc(badgeText)}</span>` : ''}
         </span>
-        ${commentIcon}
+        ${cmtBadge}
         <span class="pin-go">${svgIcon('arrowRight', 13, 2.2)}</span>
       </div>`;
   }).join('');
@@ -2812,68 +3281,6 @@ function renderUnassignedGroup(unassignedPins){
     <div class="group-body"><div class="inner">
       ${renderPinSummary(counts, unassignedPins.length > 0, 'unassigned')}
       ${renderPinDetails(unassignedPins, 'unassigned')}
-    </div></div>
-  `;
-  container.appendChild(group);
-}
-
-function renderCoverageRowHtml(cov, isSub){
-  const date = formatCoverageDate(cov.item.coveredAt);
-  const guide = cov.item.guide || "—";
-  const pinCount = String(cov.item.pinIds || "").split(",").filter(s => s.trim()).length;
-  const searchText = (date + ' ' + guide + ' coverage').toLowerCase();
-  const delBtn = isMapper()
-    ? `<button class="pin-del" data-del="${esc(cov.item.id)}" data-del-title="Covered ${esc(date)}" data-del-kind="coverage" title="Delete">${svgIcon('trash',12)}</button>`
-    : '';
-  return `
-    <div class="coverage-sub${isSub ? ' nested' : ''}" data-coverage-id="${esc(cov.item.id)}" data-search="${esc(searchText)}">
-      <span class="cov-icon">${svgIcon('target', 12, 2.2)}</span>
-      <span class="cov-date">${esc(date)}</span>
-      <span class="cov-meta">${pinCount} pin${pinCount === 1 ? '' : 's'} · ${esc(guide)}</span>
-      <button class="zoom-btn" data-zoom="${esc(cov.item.id)}" title="Zoom">${svgIcon('target',12)}</button>
-      ${delBtn}
-    </div>
-  `;
-}
-
-function renderCoverageGroup(coverages){
-  const container = document.getElementById("listContainer");
-  const group = document.createElement("div");
-  group.className = "group";
-  const canDelete = isMapper();
-
-  const rows = coverages.map(c => {
-    const date = formatCoverageDate(c.item.coveredAt);
-    const guide = c.item.guide || "—";
-    const pinCount = String(c.item.pinIds || "").split(",").filter(s => s.trim()).length;
-    const searchText = (date + ' ' + guide + ' coverage').toLowerCase();
-    const delBtn = canDelete
-      ? `<button class="pin-del" data-del="${esc(c.item.id)}" data-del-title="Covered ${esc(date)}" data-del-kind="coverage" title="Delete">${svgIcon('trash',13)}</button>`
-      : '';
-    return `
-      <div class="pin-row" data-coverage-id="${esc(c.item.id)}" data-search="${esc(searchText)}">
-        <span class="pin-dot" style="background:#2563eb"></span>
-        <span class="pin-label">
-          <span class="pin-name">${esc(date)}</span>
-          <span class="pin-type-small">${pinCount} pin${pinCount === 1 ? '' : 's'} · ${esc(guide)}</span>
-        </span>
-        <button class="zoom-btn" data-zoom="${esc(c.item.id)}" title="Zoom">${svgIcon('target',13)}</button>
-        ${delBtn}
-      </div>
-    `;
-  }).join('');
-
-  group.innerHTML = `
-    <div class="group-head" data-toggle>
-      <span class="caret">▶</span>
-      <span class="swatch" style="background:#2563eb"></span>
-      <span class="group-title" style="color:var(--text-dim)">Covered areas</span>
-      <span class="pin-type-small" style="margin-left:auto;flex-shrink:0;background:var(--surface-2);color:var(--text-dim);padding:3px 8px;border-radius:99px;font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;">${coverages.length}</span>
-    </div>
-    <div class="group-body"><div class="inner">
-      <div class="pin-details" style="display:block;padding:0 10px 10px">
-        <div class="pin-details-list">${rows}</div>
-      </div>
     </div></div>
   `;
   container.appendChild(group);
@@ -2968,6 +3375,8 @@ async function deleteRecord(id, title, kind, btn){
       await new Promise(r => setTimeout(r, 400));
       clearOverlays();
       await fetchPlacesFromSheet();
+      loadCommentCounts();
+      loadRequests();
     } catch(e){
       console.error("Delete failed:", e);
       toast(`Delete failed: ${e.message}`, "error", 5000);
@@ -3071,23 +3480,28 @@ function installKeyboardShortcuts(){
       case 'Escape':
         if (!document.getElementById('pinSheet').hidden){ closePinSheet(); }
         else if (!document.getElementById('coverageModal').hidden){ closeCoverageModal(); }
+        else if (!document.getElementById('requestModal').hidden){ closeRequestModal(); }
         else if (!document.getElementById('adminRoot').hidden){ closeAdminPanel(); }
         else if (isTracing) cancelTracing();
         else if (isCoverage) cancelCoverage();
+        else if (isRequesting) cancelRequestMode();
         else if (isPinning) cancelPinMode();
         else if (isEditing) cancelEditingTrace();
         break;
       case 't': case 'T':
-        if (!isTracing && !isPinning && !isEditing && !isCoverage) toggleTracing();
+        if (!isTracing && !isPinning && !isEditing && !isCoverage && !isRequesting) toggleTracing();
         break;
       case 'p': case 'P':
-        if (!isTracing && !isPinning && !isEditing && !isCoverage) togglePinMode();
+        if (!isTracing && !isPinning && !isEditing && !isCoverage && !isRequesting) togglePinMode();
         break;
       case 'c': case 'C':
-        if (!isTracing && !isPinning && !isEditing && !isCoverage) toggleCoverage();
+        if (!isTracing && !isPinning && !isEditing && !isCoverage && !isRequesting) toggleCoverage();
+        break;
+      case 'r': case 'R':
+        if (!isTracing && !isPinning && !isEditing && !isCoverage && !isRequesting && isViewer()) toggleRequestMode();
         break;
       case 'd': case 'D':
-        if (isTracing || isPinning || isCoverage) togglePanMode();
+        if (isTracing || isPinning || isCoverage || isRequesting) togglePanMode();
         break;
     }
   });
@@ -3129,14 +3543,12 @@ function onAuthReady(){
 
 window.addEventListener('load', async () => {
   renderStaticIcons();
-  renderSubtypeChips('House');
+  renderSubtypeChips('House', 'subtypeChips', '');
   installBottomSheet();
   installKeyboardShortcuts();
   installLeaveWarning();
   installSearch();
 
-  // Bridge: Google Maps may already have called window.initMap (the shim above).
-  // Now that app.js is fully evaluated, wire the real initMap in and fire it if needed.
   window.__realInitMap = initMap;
   if (window.__initMapPending){
     window.__initMapPending = false;
