@@ -3061,6 +3061,14 @@ window.addEventListener('load', async () => {
   installLeaveWarning();
   installSearch();
 
+  // Bridge: Google Maps may already have called window.initMap (the shim above).
+  // Now that app.js is fully evaluated, wire the real initMap in and fire it if needed.
+  window.__realInitMap = initMap;
+  if (window.__initMapPending){
+    window.__initMapPending = false;
+    initMap();
+  }
+
   const user = await verifyStoredToken();
   if (!user){ openAuthModal(); return; }
   onAuthReady();

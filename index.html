@@ -92,7 +92,7 @@
       <div id="coverageActiveControls" hidden>
         <div class="mode-bar">
           <span class="dot"></span>
-          <span class="txt" id="coverageCountText">Tap the map to draw a covered area</span>
+          <span class="txt" id="coverageCountText">Tap pins to include them</span>
         </div>
         <div class="btn-row" style="margin-top:8px">
           <button class="btn btn-amber" onclick="undoLastTracePoint()"><span class="ic" id="ic-undo-cov"></span> Undo</button>
@@ -412,8 +412,27 @@
 
 <div id="toasts"></div>
 
-<script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUZYpZJJ2rOPpKJx539Dxa8VsLtZC_tTs&libraries=geometry&callback=initMap"></script>
+<!-- ============================================================ MAPS LOAD SHIM -->
+<!-- Defines window.initMap BEFORE Google's script can call it, so the callback
+     can never fire before app.js has finished loading. -->
+<script>
+  window.__realInitMap = null;
+  window.__initMapPending = false;
+
+  window.initMap = function(){
+    if (typeof window.__realInitMap === "function") {
+      window.__realInitMap();
+    } else {
+      window.__initMapPending = true;
+    }
+  };
+</script>
+
+<!-- Note: no `async` — only `defer`. This guarantees the Maps script runs
+     AFTER app.js (which is a normal blocking script) has executed. -->
+<script defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUZYpZJJ2rOPpKJx539Dxa8VsLtZC_tTs&libraries=geometry&callback=initMap&loading=async"></script>
+
 <script src="app.js"></script>
 </body>
 </html>
