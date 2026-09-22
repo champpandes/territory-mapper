@@ -5,475 +5,213 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
 <title>Territory Mapper</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232563eb'/%3E%3Cstop offset='1' stop-color='%234f8ef7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Cpath d='M16 44V22l16 12 16-12v22' stroke='white' stroke-width='4.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='48' cy='16' r='5' fill='white'/%3E%3Ccircle cx='48' cy='16' r='2' fill='%232563eb'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Cpath d='M14 58 V30 L32 46 L46 30 V58' stroke='white' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='46' cy='20' r='8' fill='white'/%3E%3Ccircle cx='46' cy='20' r='3.5' fill='%232563eb'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
 <script src="https://unpkg.com/@googlemaps/markerclusterer@2.5.3/dist/index.min.js" onerror="window.__noClusterer=true"></script>
-<style>
-:root{
-  --bg:#f5f7fa;--surface:#ffffff;--surface-2:#f2f4f8;--border:#e4e8ef;
-  --text:#151a21;--text-dim:#6b7280;--text-faint:#9aa3b0;
-  --accent:#2563eb;--accent-soft:#eff5ff;--accent-ring:rgba(37,99,235,.14);
-  --green:#16a34a;--amber:#d97706;--amber-soft:#fff7ed;--danger:#dc2626;
-  --r-lg:14px;--r-md:10px;--r-sm:7px;
-  --sh-1:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.07);
-  --sh-2:0 4px 14px rgba(16,24,40,.09);
-  --sh-3:0 12px 32px rgba(16,24,40,.14);
-  --tap-min:44px;
-  --sheet-height:45dvh;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
-  overscroll-behavior:none}
-
-.ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:0}
-.ic svg{display:block}
-
-#sidebar{width:390px;flex-shrink:0;height:100vh;height:100dvh;background:var(--surface);
-  border-right:1px solid var(--border);display:flex;flex-direction:column;
-  overflow-y:auto;overflow-x:hidden;z-index:20;-webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain}
-#sidebar::-webkit-scrollbar{width:9px}
-#sidebar::-webkit-scrollbar-thumb{background:#d5dbe4;border-radius:99px;border:2px solid var(--surface)}
-#sidebar::-webkit-scrollbar-thumb:hover{background:#c0c8d4}
-
-.brand{display:flex;align-items:center;gap:12px;padding:18px 18px 16px;
-  border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:5}
-.brand-logo{width:40px;height:40px;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(37,99,235,.35))}
-.brand-logo svg{display:block;width:100%;height:100%}
-.brand h1{font-size:1.02rem;font-weight:750;letter-spacing:-.02em;line-height:1.15}
-.brand p{font-size:.7rem;color:var(--text-faint);margin-top:3px}
-
-.section{padding:16px 18px;border-bottom:1px solid var(--border)}
-.section:last-child{border-bottom:none}
-.sec-head{display:flex;align-items:center;justify-content:space-between;
-  font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--text-faint);margin-bottom:11px}
-.sec-head .count{background:var(--surface-2);color:var(--text-dim);
-  font-size:.68rem;padding:2px 7px;border-radius:99px;letter-spacing:0}
-
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  width:100%;padding:11px 14px;border:none;border-radius:var(--r-md);
-  font-family:inherit;font-size:.845rem;font-weight:600;letter-spacing:-.005em;
-  cursor:pointer;transition:background .16s,box-shadow .16s,transform .08s,color .16s;
-  white-space:nowrap;min-height:var(--tap-min);touch-action:manipulation}
-.btn:active:not(:disabled){transform:scale(.975)}
-.btn:disabled{opacity:.55;cursor:wait}
-.btn:disabled:not([data-busy="1"]){cursor:not-allowed}
-.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.28)}
-.btn-primary:hover:not(:disabled){background:#1d4ed8}
-.btn-green{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.25)}
-.btn-green:hover:not(:disabled){background:#15803d}
-.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:var(--sh-1)}
-.btn-ghost:hover:not(:disabled){background:var(--surface-2);border-color:#d3dae4}
-.btn-amber{background:var(--amber-soft);color:var(--amber);border:1px solid #fed7aa}
-.btn-amber:hover:not(:disabled){background:#ffedd5}
-.btn-amber:disabled{background:var(--surface-2);color:var(--text-faint);border-color:var(--border)}
-.btn-danger{background:#fef2f2;color:var(--danger);border:1px solid #fecaca}
-.btn-danger:hover:not(:disabled){background:#fee2e2;border-color:#fca5a5}
-.btn-dark{background:#1e293b;color:#fff;border:1px solid #1e293b}
-.btn-dark:hover:not(:disabled){background:#0f172a}
-.btn-row{display:flex;gap:8px}
-
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
-.field label{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
-.field input,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
-  font-family:inherit;font-size:16px;font-weight:600;color:var(--text);background:var(--surface);
-  transition:border-color .14s,box-shadow .14s;outline:none;resize:vertical}
-.field textarea{font-size:.85rem;font-weight:500;line-height:1.5;min-height:70px}
-.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
-
-.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:11px}
-.chip{display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 4px;
-  border-radius:var(--r-md);background:var(--surface);border:1.5px solid var(--border);
-  cursor:pointer;font-family:inherit;font-size:.72rem;font-weight:600;color:var(--text-dim);
-  transition:all .16s;min-height:var(--tap-min);touch-action:manipulation}
-.chip:hover{border-color:#cbd5e1;background:var(--surface-2)}
-.chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-ring)}
-.chip .emoji-ic{width:20px;height:20px;display:flex;align-items:center;justify-content:center}
-
-.mode-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 11px;
-  border-radius:var(--r-md);background:var(--accent-soft);border:1px solid #cfe0fd;animation:slideDown .2s ease}
-.mode-bar.amber{background:var(--amber-soft);border-color:#fed7aa}
-.mode-bar.blue{background:#eff6ff;border-color:#bfdbfe}
-.mode-bar.dark{background:#1e293b;border-color:#334155}
-.mode-bar .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;
-  animation:pulse 1.4s ease-in-out infinite}
-.mode-bar.amber .dot{background:var(--amber)}
-.mode-bar.blue .dot{background:#2563eb}
-.mode-bar.dark .dot{background:#94a3b8}
-.mode-bar .txt{font-size:.75rem;font-weight:600;color:var(--accent);flex:1;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mode-bar.amber .txt{color:var(--amber)}
-.mode-bar.blue .txt{color:#1d4ed8}
-.mode-bar.dark .txt{color:#e2e8f0}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
-@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-
-.group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
-  overflow:hidden;margin-bottom:9px;box-shadow:var(--sh-1);transition:box-shadow .18s}
-.group.editing{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18), var(--sh-1)}
-.group-head{display:flex;align-items:center;gap:6px;padding:11px 10px 11px 12px;cursor:pointer;
-  user-select:none;transition:background .14s}
-.group-head:hover{background:var(--surface-2)}
-.caret{font-size:.6rem;color:var(--text-faint);flex-shrink:0;transition:transform .2s ease;
-  width:9px;text-align:center}
-.group.open .caret{transform:rotate(90deg)}
-.swatch{width:11px;height:11px;border-radius:3px;flex-shrink:0}
-.group-title{font-size:.83rem;font-weight:650;flex:1;min-width:0;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.005em}
-.zoom-btn{background:transparent;border:none;padding:6px;border-radius:var(--r-sm);
-  cursor:pointer;color:var(--text-dim);flex-shrink:0;transition:all .14s;touch-action:manipulation;
-  display:grid;place-items:center}
-.zoom-btn:hover{background:var(--surface-2);color:var(--accent)}
-.icon-btn{background:var(--surface);border:1px solid var(--border);width:30px;height:30px;
-  border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer;
-  flex-shrink:0;transition:all .14s;font-family:inherit;padding:0;touch-action:manipulation;color:var(--text-dim)}
-.icon-btn:hover:not(:disabled){background:var(--surface-2);color:var(--text)}
-.icon-btn.edit:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
-.icon-btn.del:hover:not(:disabled){background:var(--danger);border-color:var(--danger);color:#fff}
-.icon-btn.sub{border-color:#bbf7d0;color:var(--green)}
-.icon-btn.sub:hover:not(:disabled){background:#dcfce7}
-.icon-btn:disabled{opacity:.5;cursor:wait}
-
-.group-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1)}
-.group.open .group-body{grid-template-rows:1fr}
-.group-body > .inner{overflow:hidden}
-
-.pin-summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px;
-  padding:0 12px 11px 12px}
-.subgroup .pin-summary{padding:0 10px 9px 10px}
-.pin-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;
-  font-size:.72rem;font-weight:700;line-height:1;letter-spacing:-.005em;
-  background:var(--surface-2);color:var(--text-dim)}
-.pin-chip svg{width:13px;height:13px;display:block;flex-shrink:0}
-.pin-chip.house{background:#eff5ff;color:#2563eb}
-.pin-chip.store{background:#dcfce7;color:#15803d}
-.pin-chip.landmark{background:#fee2e2;color:#b91c1c}
-.pin-chip.other{background:var(--surface-2);color:var(--text-dim)}
-.pin-chip.empty{background:transparent;color:var(--text-faint);font-weight:600;
-  font-size:.68rem;padding:2px 0;letter-spacing:0}
-
-.subgroup{background:#f8fafc;border:1px solid #e8edf3;border-radius:var(--r-md);
-  margin:0 9px 7px;overflow:hidden;position:relative}
-.subgroup:last-child{margin-bottom:9px}
-.subgroup.editing{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.14)}
-.subgroup-head{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 10px;cursor:pointer;
-  user-select:none;transition:background .14s;font-size:.78rem}
-.subgroup-head:hover{background:#eef2f7}
-.subgroup .caret{font-size:.55rem}
-.subgroup-title{font-weight:600;flex:1;min-width:0;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.subgroup .swatch{width:9px;height:9px}
-.subgroup .icon-btn{width:26px;height:26px}
-.subgroup .zoom-btn{padding:5px}
-
-.pin-details{display:none;padding:0 10px 10px}
-.group.pins-open .pin-details,
-.subgroup.pins-open .pin-details{display:block}
-.pin-details-list{display:flex;flex-direction:column;gap:4px;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
-  padding:5px;max-height:260px;overflow-y:auto}
-.pin-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;
-  background:var(--surface-2);font-size:.75rem;cursor:pointer;transition:background .14s;
-  touch-action:manipulation;position:relative}
-.pin-row:hover{background:var(--accent-soft)}
-.pin-row:active{background:var(--accent-soft)}
-.pin-row .pin-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.pin-row .pin-type{flex:1;font-weight:600;color:var(--text);text-transform:capitalize;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pin-row .pin-go{color:var(--text-faint);display:grid;place-items:center;flex-shrink:0}
-.pin-row .pin-del{background:transparent;border:none;padding:4px;border-radius:5px;
-  cursor:pointer;color:var(--text-faint);display:grid;place-items:center;transition:all .14s;flex-shrink:0}
-.pin-row .pin-del:hover{background:var(--danger);color:#fff}
-
-.show-pins-btn{background:transparent;border:none;padding:4px 8px;border-radius:99px;
-  font-family:inherit;font-size:.66rem;font-weight:700;letter-spacing:.02em;
-  text-transform:uppercase;color:var(--accent);cursor:pointer;
-  transition:background .14s;margin-left:auto;flex-shrink:0}
-.show-pins-btn:hover{background:var(--accent-soft)}
-
-.hint-empty{font-size:.72rem;color:var(--text-faint);padding:8px 12px;text-align:center}
-
-.empty{text-align:center;padding:36px 20px;color:var(--text-faint);font-size:.82rem;line-height:1.6}
-.empty .big-ic{margin:0 auto 14px;width:56px;height:56px;color:#cbd5e1;display:grid;place-items:center}
-
-#mapWrap{flex:1;height:100%;min-width:0;position:relative;background:#e8eaed}
-#map{width:100%;height:100%}
-
-.map-badge{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;
-  align-items:center;gap:8px;background:rgba(21,26,33,.92);backdrop-filter:blur(8px);color:#fff;
-  padding:8px 15px;border-radius:99px;font-size:.76rem;font-weight:600;letter-spacing:-.005em;
-  box-shadow:var(--sh-3);z-index:1000;pointer-events:none;animation:slideDown .22s ease;
-  white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
-.map-badge .dot{width:7px;height:7px;border-radius:50%;background:#60a5fa;flex-shrink:0;
-  animation:pulse 1.4s ease-in-out infinite}
-.map-badge.amber .dot{background:#fbbf24}
-.map-badge.dark{background:rgba(30,41,59,.95)}
-.map-badge.dark .dot{background:#fde68a}
-.map-badge[hidden]{display:none}
-
-.trace-label{position:absolute;transform:translate(-50%,-50%);pointer-events:none;
-  background:rgba(255,255,255,.94);backdrop-filter:blur(6px);padding:5px 11px;border-radius:99px;
-  box-shadow:0 2px 8px rgba(16,24,40,.14),0 0 0 1px rgba(16,24,40,.05);
-  font-size:.72rem;font-weight:700;letter-spacing:-.005em;color:var(--text);
-  white-space:nowrap;user-select:none;z-index:500}
-.trace-label .tl-name{display:block}
-.trace-label .tl-count{display:block;font-size:.62rem;font-weight:600;
-  color:var(--text-faint);margin-top:1px;letter-spacing:.02em}
-.trace-label.small{font-size:.65rem;padding:4px 9px}
-.trace-label.small .tl-count{font-size:.58rem}
-
-#panFab{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:8px;
-  background:rgba(21,26,33,.95);backdrop-filter:blur(10px);color:#fff;
-  padding:12px 20px;border-radius:99px;border:none;cursor:pointer;
-  font-family:inherit;font-size:.85rem;font-weight:700;letter-spacing:-.005em;
-  box-shadow:var(--sh-3);z-index:1000;transition:all .16s;white-space:nowrap;
-  min-height:var(--tap-min);touch-action:manipulation}
-#panFab:hover{background:#0f172a}
-#panFab.active{background:#f59e0b;color:#1c1917;box-shadow:0 4px 18px rgba(245,158,11,.5)}
-#panFab[hidden]{display:none}
-
-#toasts{position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;
-  flex-direction:column;align-items:center;gap:8px;z-index:2000;pointer-events:none;
-  max-width:calc(100vw - 24px)}
-.toast{background:rgba(21,26,33,.95);backdrop-filter:blur(10px);color:#fff;padding:10px 18px;
-  border-radius:99px;font-size:.8rem;font-weight:600;letter-spacing:-.005em;box-shadow:var(--sh-3);
-  animation:toastIn .26s cubic-bezier(.34,1.4,.64,1);display:flex;align-items:center;gap:8px;
-  max-width:100%;word-break:break-word}
-.toast.success{background:rgba(21,128,61,.96)}
-.toast.error{background:rgba(185,28,28,.96)}
-.toast.out{animation:toastOut .22s ease forwards}
-@keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
-@keyframes toastOut{to{opacity:0;transform:translateY(-10px) scale(.96)}}
-
-.modal-root{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;
-  padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
-.modal-root[hidden]{display:none}
-.modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);
-  animation:fadeIn .18s ease}
-.modal-card{position:relative;background:var(--surface);border-radius:18px;padding:22px;
-  width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.35);
-  animation:modalIn .24s cubic-bezier(.34,1.4,.64,1);max-height:calc(100vh - 40px);
-  max-height:calc(100dvh - 40px);overflow-y:auto}
-.modal-title{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;color:var(--text);
-  margin-bottom:10px}
-.modal-msg{font-size:.86rem;color:var(--text-dim);line-height:1.55;margin-bottom:16px;white-space:pre-line}
-.modal-input,.modal-textarea{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);
-  font-family:inherit;font-size:16px;font-weight:600;color:var(--text);background:var(--surface);
-  outline:none;margin-bottom:16px;transition:border-color .14s,box-shadow .14s;resize:vertical}
-.modal-textarea{font-size:.86rem;font-weight:500;min-height:80px;line-height:1.5}
-.modal-input:focus,.modal-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
-.modal-actions{display:flex;gap:10px}
-.modal-actions .btn{flex:1}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
-
-@media (max-width:768px){
-  body{flex-direction:column}
-  #mapWrap{width:100%;height:auto;flex:1;order:1;min-height:20dvh}
-  #sidebar{
-    width:100%;height:var(--sheet-height);order:2;flex-shrink:0;
-    border-right:none;border-top:1px solid var(--border);
-    border-radius:20px 20px 0 0;margin-top:-20px;
-    box-shadow:0 -4px 20px rgba(16,24,40,.14);
-    position:relative;z-index:20;
-    padding-bottom:env(safe-area-inset-bottom);
-    transition:height .28s cubic-bezier(.34,1.4,.64,1);
-    touch-action:pan-y;
-  }
-  #sidebar.dragging{transition:none}
-  .sheet-handle{
-    display:block;padding:10px 0 6px;cursor:grab;flex-shrink:0;
-    touch-action:none;
-  }
-  .sheet-handle::before{
-    content:"";display:block;width:44px;height:5px;border-radius:99px;
-    background:#cbd5e1;margin:0 auto;
-  }
-  .sheet-handle:active{cursor:grabbing}
-  .brand{padding:6px 16px 12px}
-  .brand-logo{width:36px;height:36px}
-  .brand h1{font-size:.98rem}
-  .section{padding:14px 16px}
-  .map-badge{top:12px;font-size:.72rem;padding:7px 13px}
-  #panFab{bottom:calc(24px + env(safe-area-inset-bottom));padding:13px 22px;font-size:.88rem}
-  #toasts{top:calc(12px + env(safe-area-inset-top))}
-  .modal-card{margin-bottom:auto;margin-top:auto}
-  .group-head{padding:12px 10px 12px 12px}
-  .subgroup-head{padding:9px 8px 9px 10px}
-}
-
-@media (min-width:769px){
-  .sheet-handle{display:none}
-}
-
-@media (max-width:480px){
-  .brand p{display:none}
-  .btn-row{gap:6px}
-  .modal-card{padding:18px;border-radius:16px}
-}
-</style>
 </head>
-<body>
+<body data-role="loading">
 
 <aside id="sidebar">
-  <div class="sheet-handle" id="sheetHandle"></div>
+  <div class="sidebar-inner">
 
-  <div class="brand">
-    <div class="brand-logo" aria-hidden="true">
-      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="tmGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#2563eb"/>
-            <stop offset="1" stop-color="#4f8ef7"/>
-          </linearGradient>
-          <clipPath id="tmClip">
-            <rect width="64" height="64" rx="14"/>
-          </clipPath>
-        </defs>
-        <rect width="64" height="64" rx="14" fill="url(#tmGrad)"/>
-        <g clip-path="url(#tmClip)" stroke="#ffffff" stroke-opacity="0.13" stroke-width="1">
-          <line x1="0" y1="16" x2="64" y2="16"/>
-          <line x1="0" y1="32" x2="64" y2="32"/>
-          <line x1="0" y1="48" x2="64" y2="48"/>
-          <line x1="16" y1="0" x2="16" y2="64"/>
-          <line x1="32" y1="0" x2="32" y2="64"/>
-          <line x1="48" y1="0" x2="48" y2="64"/>
-        </g>
-        <path d="M14 46V22l18 14 18-14v24" stroke="white" stroke-width="4.5" fill="none"
-              stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="48" cy="16" r="5" fill="#ffffff"/>
-        <circle cx="48" cy="16" r="2" fill="#2563eb"/>
-      </svg>
-    </div>
-    <div>
-      <h1>Territory Mapper</h1>
-      <p>Map your world, one pin at a time</p>
-    </div>
-  </div>
-
-  <div class="section" style="padding-bottom:14px">
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="goToCurrentGPS()" style="flex:2">
-        <span class="ic" id="ic-loc"></span> My location
-      </button>
-      <button class="btn btn-ghost" id="refreshBtn" onclick="manualRefresh(this)" style="flex:1">
-        <span class="ic" id="ic-refresh"></span> Refresh
+    <div class="sheet-handle" id="sheetHandle">
+      <button class="sheet-toggle" id="sheetToggle" type="button" aria-label="Toggle sidebar" onclick="toggleMobileSheet()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
     </div>
-  </div>
 
-  <div class="section" id="editPanel" hidden>
-    <div class="sec-head"><span>Editing shape</span></div>
-
-    <div class="field">
-      <label for="editTraceNameInput">Name</label>
-      <input type="text" id="editTraceNameInput" maxlength="120" autocomplete="off">
-    </div>
-
-    <div class="field">
-      <label for="editTraceNotesInput">Notes <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-faint)">(optional)</span></label>
-      <textarea id="editTraceNotesInput" maxlength="600" rows="3"
-        placeholder="e.g. Boundary approved on 2026-01-15 by Barangay Captain"></textarea>
-    </div>
-
-    <div class="mode-bar blue">
-      <span class="dot"></span>
-      <span class="txt" id="editHintText">Drag dots · tap edge to add · long-press dot to remove</span>
-    </div>
-
-    <div class="btn-row" style="margin-top:10px">
-      <button class="btn btn-ghost" onclick="cancelEditingTrace()">Cancel</button>
-      <button class="btn btn-green" id="saveEditBtn" onclick="saveEditedTrace(this)">
-        <span class="ic" id="ic-save-edit"></span> Save
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="tmGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#2563eb"/>
+              <stop offset="1" stop-color="#4f8ef7"/>
+            </linearGradient>
+            <clipPath id="tmClip"><rect width="64" height="64" rx="14"/></clipPath>
+          </defs>
+          <rect width="64" height="64" rx="14" fill="url(#tmGrad)"/>
+          <g clip-path="url(#tmClip)" stroke="#ffffff" stroke-opacity="0.18" stroke-width="0.7">
+            <line x1="0" y1="21" x2="64" y2="21"/>
+            <line x1="0" y1="43" x2="64" y2="43"/>
+            <line x1="21" y1="0" x2="21" y2="64"/>
+            <line x1="43" y1="0" x2="43" y2="64"/>
+          </g>
+          <path d="M14 58 V30 L32 46 L46 30 V58" stroke="white" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="46" cy="20" r="8" fill="#ffffff"/>
+          <circle cx="46" cy="20" r="3.5" fill="#2563eb"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Territory Mapper</h1>
+        <p>Map your world, one pin at a time</p>
+      </div>
+      <button class="collapse-btn" type="button" onclick="toggleSidebar()" aria-label="Collapse sidebar" title="Collapse sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
     </div>
-  </div>
 
-  <div class="section">
-    <div class="sec-head"><span>Drop pins</span></div>
-    <div class="chips" id="pinTypeChips">
-      <button class="chip active" data-type="House"><span class="emoji-ic" data-ic="home"></span>House</button>
-      <button class="chip" data-type="Store"><span class="emoji-ic" data-ic="store"></span>Store</button>
-      <button class="chip" data-type="Landmark"><span class="emoji-ic" data-ic="landmark"></span>Landmark</button>
+    <div class="user-bar" id="userBar" hidden>
+      <div class="user-avatar" id="userAvatar">–</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">–</div>
+        <div class="user-role" id="userRole">–</div>
+      </div>
+      <button class="user-icon-btn" id="adminOpen" type="button" title="Settings" aria-label="Open settings" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button class="user-logout" id="userLogout" type="button" title="Sign out" aria-label="Sign out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <path d="M16 17l5-5-5-5"/>
+          <path d="M21 12H9"/>
+        </svg>
+      </button>
     </div>
-    <button id="pinModeBtn" class="btn btn-primary" onclick="togglePinMode()">
-      <span class="ic" id="ic-plus-pin"></span> Start adding pins
-    </button>
-    <div id="pinActiveControls" hidden>
-      <div class="mode-bar">
+
+    <div class="section" style="padding-bottom:14px">
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goToCurrentGPS()" style="flex:2">
+          <span class="ic" id="ic-loc"></span> My location
+        </button>
+        <button class="btn btn-ghost" id="refreshBtn" onclick="manualRefresh(this)" style="flex:1">
+          <span class="ic" id="ic-refresh"></span> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- COVERAGE (everyone) -->
+    <div class="section">
+      <div class="sec-head"><span>Coverage</span></div>
+      <button id="coverageBtn" class="btn btn-ghost" onclick="toggleCoverage()">
+        <span class="ic" id="ic-coverage"></span> Mark a covered area
+      </button>
+      <div id="coverageActiveControls" hidden>
+        <div class="mode-bar">
+          <span class="dot"></span>
+          <span class="txt" id="coverageCountText">Tap the map to draw a covered area</span>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-amber" onclick="undoLastTracePoint()"><span class="ic" id="ic-undo-cov"></span> Undo</button>
+          <button class="btn btn-amber" id="panBtnCoverage" onclick="togglePanMode()"><span class="ic" id="ic-pan-cov"></span> Pan</button>
+          <button class="btn btn-danger" onclick="cancelCoverage()"><span class="ic" id="ic-x-cov"></span> Cancel</button>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-green" id="saveCoverageBtn" onclick="finishCoverage(this)"><span class="ic" id="ic-save-cov"></span> Save covered area</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="editPanel" data-role="mapper" hidden>
+      <div class="sec-head"><span>Editing shape</span></div>
+      <div class="field">
+        <label for="editTraceNameInput">Name</label>
+        <input type="text" id="editTraceNameInput" maxlength="120" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="editTraceNotesInput">Notes <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-faint)">(optional)</span></label>
+        <textarea id="editTraceNotesInput" maxlength="600" rows="3" placeholder="e.g. Boundary approved on 2026-01-15 by Barangay Captain"></textarea>
+      </div>
+      <div class="mode-bar blue">
         <span class="dot"></span>
-        <span class="txt" id="pinCountText">Tap inside a traced area to drop a pin</span>
+        <span class="txt" id="editHintText">Drag dots · tap edge to add · long-press dot to remove</span>
       </div>
-      <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-amber" onclick="undoLastPin()">
-          <span class="ic" id="ic-undo-pin"></span> Undo
-        </button>
-        <button class="btn btn-amber" id="panBtnPin" onclick="togglePanMode()">
-          <span class="ic" id="ic-pan-pin"></span> Pan
-        </button>
-        <button class="btn btn-danger" onclick="cancelPinMode()">
-          <span class="ic" id="ic-x-pin"></span> Cancel
-        </button>
-      </div>
-      <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-green" id="savePinsBtn" onclick="finishPinning(this)">
-          <span class="ic" id="ic-save-pin"></span> Save pins
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-ghost" onclick="cancelEditingTrace()">Cancel</button>
+        <button class="btn btn-green" id="saveEditBtn" onclick="saveEditedTrace(this)">
+          <span class="ic" id="ic-save-edit"></span> Save
         </button>
       </div>
     </div>
-  </div>
 
-  <div class="section">
-    <div class="sec-head"><span>Draw traces</span></div>
-    <button id="traceBtn" class="btn btn-ghost" onclick="toggleTracing()">
-      <span class="ic" id="ic-pencil"></span> Start manual tracing
-    </button>
-    <div id="traceActiveControls" hidden>
-      <div class="mode-bar amber">
-        <span class="dot"></span>
-        <span class="txt" id="traceCountText">Tap the map to draw a path</span>
+    <div class="section" data-role="mapper">
+      <div class="sec-head"><span>Drop pins</span></div>
+      <div class="chips" id="pinTypeChips">
+        <button class="chip active" data-type="House"><span class="emoji-ic" data-ic="home"></span>House</button>
+        <button class="chip" data-type="Store"><span class="emoji-ic" data-ic="store"></span>Store</button>
+        <button class="chip" data-type="Landmark"><span class="emoji-ic" data-ic="landmark"></span>Landmark</button>
       </div>
-      <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-amber" onclick="undoLastTracePoint()">
-          <span class="ic" id="ic-undo-tr"></span> Undo
-        </button>
-        <button class="btn btn-amber" id="panBtnTrace" onclick="togglePanMode()">
-          <span class="ic" id="ic-pan-tr"></span> Pan
-        </button>
-        <button class="btn btn-danger" onclick="cancelTracing()">
-          <span class="ic" id="ic-x-tr"></span> Cancel
-        </button>
+      <div class="subtype-chips" id="subtypeChips"></div>
+      <button id="pinModeBtn" class="btn btn-primary" onclick="togglePinMode()">
+        <span class="ic" id="ic-plus-pin"></span> Start adding pins
+      </button>
+      <div id="pinActiveControls" hidden>
+        <div class="mode-bar">
+          <span class="dot"></span>
+          <span class="txt" id="pinCountText">Tap inside a traced area to drop a pin</span>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-amber" onclick="undoLastPin()"><span class="ic" id="ic-undo-pin"></span> Undo</button>
+          <button class="btn btn-amber" id="panBtnPin" onclick="togglePanMode()"><span class="ic" id="ic-pan-pin"></span> Pan</button>
+          <button class="btn btn-danger" onclick="cancelPinMode()"><span class="ic" id="ic-x-pin"></span> Cancel</button>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-green" id="savePinsBtn" onclick="finishPinning(this)"><span class="ic" id="ic-save-pin"></span> Save pins</button>
+        </div>
       </div>
-      <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-green" id="saveTraceBtn" onclick="finishTracing(this)">
-          <span class="ic" id="ic-save-tr"></span> Save trace
-        </button>
-      </div>
-      <p id="traceHintText" style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.55">
-        • <b>Drag the yellow dot</b> to adjust a point's position<br>
-        • Tap <b>Pan</b> to move the map
-      </p>
     </div>
-  </div>
 
-  <div class="section" style="flex:1">
-    <div class="sec-head">
-      <span>Saved places</span>
-      <span class="count" id="recordCount">0</span>
+    <div class="section" data-role="mapper">
+      <div class="sec-head"><span>Draw traces</span></div>
+      <button id="traceBtn" class="btn btn-ghost" onclick="toggleTracing()">
+        <span class="ic" id="ic-pencil"></span> Start manual tracing
+      </button>
+      <div id="traceActiveControls" hidden>
+        <div class="mode-bar amber">
+          <span class="dot"></span>
+          <span class="txt" id="traceCountText">Tap the map to draw a path</span>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-amber" onclick="undoLastTracePoint()"><span class="ic" id="ic-undo-tr"></span> Undo</button>
+          <button class="btn btn-amber" id="panBtnTrace" onclick="togglePanMode()"><span class="ic" id="ic-pan-tr"></span> Pan</button>
+          <button class="btn btn-danger" onclick="cancelTracing()"><span class="ic" id="ic-x-tr"></span> Cancel</button>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-green" id="saveTraceBtn" onclick="finishTracing(this)"><span class="ic" id="ic-save-tr"></span> Save trace</button>
+        </div>
+        <p id="traceHintText" style="font-size:.68rem;color:var(--text-faint);margin-top:8px;line-height:1.55">
+          • <b>Drag the yellow dot</b> to adjust a point's position<br>
+          • Tap <b>Pan</b> to move the map
+        </p>
+      </div>
     </div>
-    <div id="listContainer">
-      <div class="empty"><span class="big-ic" data-ic="map"></span>Loading saved items…</div>
+
+    <div class="section" style="flex:1">
+      <div class="sec-head">
+        <span>Saved places</span>
+        <span class="count" id="recordCount">0</span>
+      </div>
+
+      <div id="aggregateCounts" class="aggregate-row"></div>
+
+      <div class="search-bar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search traces or pins…" autocomplete="off">
+        <button class="search-clear" id="searchClear" type="button" hidden>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="recentPinBadge" class="recent-badge" hidden></div>
+
+      <div id="listContainer">
+        <div class="empty"><span class="big-ic" data-ic="map"></span>Loading saved items…</div>
+      </div>
     </div>
+
   </div>
 </aside>
 
 <div id="mapWrap">
   <div id="map"></div>
+  <button id="sidebarShowBtn" hidden onclick="toggleSidebar()" aria-label="Show sidebar" title="Show sidebar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
   <div id="mapBadge" class="map-badge" hidden>
     <span class="dot"></span><span id="mapBadgeText"></span>
   </div>
@@ -481,6 +219,174 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
     <span id="panFabIcon"></span>
     <span id="panFabText">Pan map</span>
   </button>
+</div>
+
+<!-- ============================================================ AUTH MODAL -->
+<div id="authRoot" class="auth-root" hidden>
+  <div class="auth-backdrop"></div>
+  <div class="auth-card">
+    <div class="auth-loading" id="authLoading">
+      <div class="auth-spinner"></div>
+      <p>Loading…</p>
+    </div>
+    <div class="auth-content" id="authContent" hidden>
+      <div class="auth-brand">
+        <div class="auth-brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="authGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#4f8ef7"/>
+            </linearGradient></defs>
+            <rect width="64" height="64" rx="14" fill="url(#authGrad)"/>
+            <path d="M14 58 V30 L32 46 L46 30 V58" stroke="white" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="46" cy="20" r="8" fill="#ffffff"/>
+            <circle cx="46" cy="20" r="3.5" fill="#2563eb"/>
+          </svg>
+        </div>
+        <h2 class="auth-brand-title" id="authTitle">Sign in</h2>
+        <p class="auth-brand-sub" id="authSubtitle">Welcome back to Territory Mapper</p>
+      </div>
+      <form id="authForm" autocomplete="on" novalidate>
+        <div class="auth-field" id="authNameField" hidden>
+          <label for="authDisplayName">Your name</label>
+          <input type="text" id="authDisplayName" name="displayName" autocomplete="name" maxlength="40" placeholder="e.g. Juan Dela Cruz">
+        </div>
+        <div class="auth-field">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" name="email" autocomplete="email" maxlength="120" placeholder="you@example.com">
+        </div>
+        <div class="auth-field">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" name="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters">
+        </div>
+        <div class="auth-error" id="authError" hidden></div>
+        <button type="submit" class="btn btn-primary auth-submit" id="authSubmit">
+          <span id="authSubmitText">Sign in</span>
+        </button>
+      </form>
+      <p class="auth-foot">
+        <span id="authFootLogin">New here? <button type="button" class="auth-link" data-action="switch-register">Create an account</button></span>
+        <span id="authFootRegister" hidden>Already have an account? <button type="button" class="auth-link" data-action="switch-login">Sign in</button></span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ ADMIN / SETTINGS PANEL -->
+<div id="adminRoot" class="admin-root" hidden>
+  <div class="admin-panel" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <header class="admin-header">
+      <button class="admin-back" id="adminClose" type="button" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="admin-header-text">
+        <h2 id="adminTitle">Settings</h2>
+        <p>Manage users and configuration</p>
+      </div>
+      <span class="admin-badge">Admin</span>
+    </header>
+    <div class="admin-body">
+      <div class="admin-inner">
+        <section class="admin-section">
+          <div class="admin-section-head">
+            <h3>Users</h3>
+            <span class="count" id="userCount">0</span>
+          </div>
+          <p class="admin-section-desc">
+            Change a role to grant or revoke access. <b>Viewers</b> can view the map, rename pins, comment, and mark covered areas. <b>Mappers</b> can add, edit, and delete pins and traces. <b>Admins</b> can do everything, including manage users here.
+          </p>
+          <div class="search-bar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" id="userSearchInput" placeholder="Search by name, email, or role…" autocomplete="off">
+          </div>
+          <div id="userList"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ PIN DETAIL SHEET -->
+<div id="pinSheet" class="pin-sheet" hidden>
+  <div class="pin-sheet-backdrop" onclick="closePinSheet()"></div>
+  <div class="pin-sheet-card" role="dialog" aria-modal="true">
+
+    <div class="pin-sheet-handle">
+      <div class="pin-sheet-grip"></div>
+    </div>
+
+    <div class="pin-sheet-head">
+      <div class="pin-sheet-icon" id="pinSheetIcon"></div>
+      <div class="pin-sheet-info">
+        <div class="pin-sheet-name" id="pinSheetName">—</div>
+        <div class="pin-sheet-type" id="pinSheetType">—</div>
+      </div>
+      <button class="pin-sheet-close" id="pinSheetClose" type="button" onclick="closePinSheet()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="pin-sheet-actions">
+      <button class="pin-sheet-action" id="pinSheetRename" type="button">
+        <span class="ic" id="ic-pin-rename"></span>
+        <span>Rename</span>
+      </button>
+      <button class="pin-sheet-action" id="pinSheetJump" type="button">
+        <span class="ic" id="ic-pin-jump"></span>
+        <span>Jump to map</span>
+      </button>
+      <button class="pin-sheet-action" id="pinSheetShare" type="button">
+        <span class="ic" id="ic-pin-share"></span>
+        <span>Share</span>
+      </button>
+    </div>
+
+    <div class="pin-sheet-divider"></div>
+
+    <div class="pin-sheet-comments-head">
+      <span>Comments</span>
+      <span class="pin-sheet-comment-count" id="pinSheetCommentCount">0</span>
+    </div>
+
+    <div class="pin-sheet-comments" id="pinSheetComments">
+      <div class="pin-sheet-comments-empty">No comments yet.</div>
+    </div>
+
+    <div class="pin-sheet-comment-form">
+      <textarea id="pinSheetCommentInput" maxlength="500" rows="2" placeholder="Write a comment…"></textarea>
+      <button class="btn btn-primary pin-sheet-comment-post" id="pinSheetCommentPost" type="button">Post</button>
+    </div>
+
+    <div class="pin-sheet-footer" id="pinSheetFooter" hidden>
+      <button class="btn btn-danger pin-sheet-delete" id="pinSheetDelete" type="button">
+        <span class="ic" id="ic-pin-del"></span>
+        <span>Delete pin</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ COVERAGE SAVE MODAL -->
+<div id="coverageModal" class="modal-root" hidden>
+  <div class="modal-backdrop" id="coverageModalBackdrop"></div>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <h3 class="modal-title">Save covered area</h3>
+    <p class="modal-msg">Tell us when this area was covered and who guided the mapping.</p>
+    <div class="field" style="margin-bottom:14px">
+      <label for="coverageDate">Date covered</label>
+      <input type="date" id="coverageDate">
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label for="coverageGuide">Guide</label>
+      <input type="text" id="coverageGuide" maxlength="80" placeholder="e.g. Juan Dela Cruz" autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="coverageCancel" type="button">Cancel</button>
+      <button class="btn btn-primary" id="coverageSave" type="button">Save covered area</button>
+    </div>
+  </div>
 </div>
 
 <div id="modalRoot" class="modal-root" hidden>
@@ -497,1786 +403,17 @@ body{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden;
   </div>
 </div>
 
+<div id="signoutOverlay" class="signout-overlay" hidden>
+  <div class="signout-card">
+    <div class="signout-spinner"></div>
+    <p class="signout-text">Signing out…</p>
+  </div>
+</div>
+
 <div id="toasts"></div>
 
 <script async defer
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUZYpZJJ2rOPpKJx539Dxa8VsLtZC_tTs&libraries=geometry&callback=initMap"></script>
-
-<script>
-/* ============================================================ ICONS */
-const ICON_PATHS = {
-  home:'M3 11l9-8 9 8v10a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2z',
-  store:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0',
-  landmark:'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
-  plus:'M12 5v14M5 12h14',
-  edit:'M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z',
-  trash:'M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6',
-  save:'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8',
-  undo:'M3 7v6h6M3 13a9 9 0 1 0 3-7.7L3 8',
-  cancel:'M18 6L6 18M6 6l12 12',
-  refresh:'M23 4v6h-6M1 20v-6h6M20.49 9A9 9 0 0 0 5.64 5.64L1 10M3.51 15a9 9 0 0 0 14.85 3.36L23 14',
-  location:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
-  pan:'M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10V5a2 2 0 0 0-4 0v9M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34L2.05 15.9a2 2 0 0 1 2.83-2.82L7 15',
-  pencil:'M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z',
-  pin:'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
-  map:'M1 6v16l7-4 8 4 7-4V2l-7 4-8-4z M8 2v16M16 6v16',
-  target:'M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M16 21h3a2 2 0 0 0 2-2v-3M8 21H5a2 2 0 0 1-2-2v-3',
-  arrowRight:'M5 12h14M13 5l7 7-7 7'
-};
-
-function svgIcon(name, size = 16, strokeWidth = 2){
-  const path = ICON_PATHS[name] || '';
-  const parts = path.split(' M ').map((p, i) => i === 0 ? p : 'M ' + p);
-  const d = parts.map(p => `<path d="${p.trim()}"/>`).join('');
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-}
-
-function renderStaticIcons(){
-  const map = {
-    'ic-loc': 'location', 'ic-refresh': 'refresh',
-    'ic-save-edit': 'save',
-    'ic-plus-pin': 'plus', 'ic-undo-pin': 'undo', 'ic-pan-pin': 'pan',
-    'ic-x-pin': 'cancel', 'ic-save-pin': 'save',
-    'ic-pencil': 'pencil', 'ic-undo-tr': 'undo', 'ic-pan-tr': 'pan',
-    'ic-x-tr': 'cancel', 'ic-save-tr': 'save'
-  };
-  Object.entries(map).forEach(([id, name]) => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = svgIcon(name, 16);
-  });
-  document.querySelectorAll('[data-ic]').forEach(el => {
-    const name = el.getAttribute('data-ic');
-    const size = el.classList.contains('big-ic') ? 40 : 20;
-    el.innerHTML = svgIcon(name, size, name === 'map' ? 1.5 : 2);
-  });
-  const pf = document.getElementById('panFabIcon');
-  if (pf) pf.innerHTML = svgIcon('pan', 16);
-}
-
-/* ============================================================ PALETTE */
-const PALETTE = [
-  '#2563eb', '#059669', '#d97706', '#e11d48', '#7c3aed',
-  '#0891b2', '#65a30d', '#ea580c', '#c026d3', '#475569'
-];
-function pickNextPaletteColor(existingTraces){
-  const used = new Set();
-  existingTraces.forEach(t => {
-    try {
-      const p = JSON.parse(t.item.coordinates);
-      if (p && p.color) used.add(p.color.toUpperCase());
-    } catch(e){}
-  });
-  for (const c of PALETTE){
-    if (!used.has(c.toUpperCase())) return c;
-  }
-  return PALETTE[used.size % PALETTE.length];
-}
-
-/* ============================================================ CONFIG */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD9x7ztrDySel0ERqDRS558dRZVVXsGMJS37c2pBOYC3DolP96R9F2M3LfpJXycW9rlA/exec";
-const TRACE_RADIUS_METERS = 300;
-const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const POINT_SCALE  = IS_TOUCH ? 11 : 7;
-const VERTEX_SCALE = IS_TOUCH ? 12 : 8;
-const DRAG_THRESHOLD_PX = 12;
-const DRAFT_KEY = 'territory-mapper-draft-v1';
-
-const MAP_STYLE = [
-  {elementType:"geometry",stylers:[{color:"#f1f4f8"}]},
-  {elementType:"labels.icon",stylers:[{visibility:"off"}]},
-  {elementType:"labels.text.fill",stylers:[{color:"#7a8696"}]},
-  {elementType:"labels.text.stroke",stylers:[{color:"#ffffff"}]},
-  {featureType:"administrative",elementType:"geometry",stylers:[{color:"#d5dce6"}]},
-  {featureType:"administrative.country",elementType:"geometry.stroke",stylers:[{color:"#c3ccd9"}]},
-  {featureType:"administrative.locality",elementType:"labels.text.fill",stylers:[{color:"#6b7280"}]},
-  {featureType:"poi",elementType:"geometry",stylers:[{color:"#e3e8ee"}]},
-  {featureType:"poi",elementType:"labels",stylers:[{visibility:"off"}]},
-  {featureType:"poi.park",elementType:"geometry",stylers:[{color:"#dcefdb"}]},
-  {featureType:"road",elementType:"geometry",stylers:[{color:"#ffffff"}]},
-  {featureType:"road",elementType:"labels.text.fill",stylers:[{color:"#8a94a4"}]},
-  {featureType:"road.arterial",elementType:"geometry",stylers:[{color:"#ffffff"}]},
-  {featureType:"road.highway",elementType:"geometry",stylers:[{color:"#f4e0b6"}]},
-  {featureType:"road.highway",elementType:"geometry.stroke",stylers:[{color:"#e4c992"}]},
-  {featureType:"road.local",elementType:"geometry",stylers:[{color:"#ffffff"}]},
-  {featureType:"transit",stylers:[{visibility:"off"}]},
-  {featureType:"water",elementType:"geometry",stylers:[{color:"#bfdbfe"}]},
-  {featureType:"water",elementType:"labels.text.fill",stylers:[{color:"#7391b0"}]}
-];
-
-/* ============================================================ STATE */
-let map, clusterer;
-let userLocation = { lat: 13.5571, lng: 123.3650 };
-let isTracing = false;
-let pendingParentId = null;
-let pendingParentTrace = null;
-let subTraceParentOverlay = null;
-let currentTracePoints = [];
-let undoStack = [];
-let activePolyline = null;
-let activePolygon = null;
-let tempMarkers = [];
-let isPinning = false;
-let currentTempPins = [];
-let tempPinMarkers = [];
-let allRecords = [];
-let allTraces = [];
-let drawnOverlays = [];
-let pinMarkerObjects = [];
-let traceLabels = [];
-const featureIndex = new Map();
-let lastRecordCount = 0;
-let lastJumpMarker = null;
-
-let isEditing = false;
-let editingTraceItem = null;
-let editingCoords = [];
-let editingMarkers = [];
-let editingPolyline = null;
-let editingFill = null;
-
-let panMode = false;
-let markerInteractionLock = false;
-
-/* ============================================================ HAPTIC */
-function haptic(ms = 8){
-  if (navigator.vibrate) navigator.vibrate(ms);
-}
-
-/* ============================================================ MODAL */
-function showModal({title = '', message = '', input = null, textarea = null, okText = 'OK', cancelText = 'Cancel'}){
-  return new Promise(resolve => {
-    const root = document.getElementById('modalRoot');
-    const tEl = document.getElementById('modalTitle');
-    const mEl = document.getElementById('modalMsg');
-    const iEl = document.getElementById('modalInput');
-    const aEl = document.getElementById('modalTextarea');
-    const okBtn = document.getElementById('modalOk');
-    const caBtn = document.getElementById('modalCancel');
-
-    tEl.textContent = title; tEl.hidden = !title;
-    mEl.textContent = message || ''; mEl.hidden = !message;
-    okBtn.textContent = okText; caBtn.textContent = cancelText;
-
-    const hasInput = input !== null;
-    const hasTextarea = textarea !== null;
-    iEl.hidden = !hasInput; aEl.hidden = !hasTextarea;
-    if (hasInput) iEl.value = input ?? '';
-    if (hasTextarea) aEl.value = textarea ?? '';
-
-    root.hidden = false;
-    document.body.style.overflow = 'hidden';
-
-    const cleanup = () => {
-      root.hidden = true;
-      document.body.style.overflow = '';
-      okBtn.onclick = null; caBtn.onclick = null;
-      document.getElementById('modalBackdrop').onclick = null;
-      iEl.onkeydown = null; aEl.onkeydown = null;
-    };
-    const confirm = () => {
-      let v = true;
-      if (hasInput) v = { input: iEl.value, textarea: hasTextarea ? aEl.value : null };
-      else if (hasTextarea) v = { textarea: aEl.value };
-      cleanup(); resolve(v);
-    };
-    const cancel = () => { cleanup(); resolve(null); };
-
-    okBtn.onclick = confirm;
-    caBtn.onclick = cancel;
-    document.getElementById('modalBackdrop').onclick = cancel;
-
-    if (hasInput || hasTextarea){
-      const onKey = (e) => {
-        if (e.key === 'Escape'){ e.preventDefault(); cancel(); }
-        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){ e.preventDefault(); confirm(); }
-      };
-      iEl.onkeydown = onKey; aEl.onkeydown = onKey;
-      setTimeout(() => { (hasInput ? iEl : aEl).focus(); iEl.select?.(); }, 60);
-    } else {
-      setTimeout(() => okBtn.focus(), 60);
-    }
-  });
-}
-function showPrompt({title = '', message = '', defaultValue = '', okText = 'OK', cancelText = 'Cancel'}){
-  return showModal({ title, message, input: defaultValue, okText, cancelText })
-    .then(v => v ? v.input : null);
-}
-function showConfirm({title = '', message = '', okText = 'OK', cancelText = 'Cancel'}){
-  return showModal({ title, message, input: null, okText, cancelText }).then(v => v !== null);
-}
-
-/* ============================================================ BUSY BUTTON */
-async function withButtonBusy(btn, busyText, fn){
-  if (!btn) return await fn();
-  if (btn.dataset.busy === '1') return;
-  const orig = btn.innerHTML;
-  btn.dataset.busy = '1'; btn.disabled = true; btn.innerHTML = busyText;
-  try { return await fn(); }
-  finally { btn.dataset.busy = ''; btn.disabled = false; btn.innerHTML = orig; }
-}
-
-/* ============================================================ HELPERS */
-function esc(s){
-  return String(s ?? '').replace(/[&<>"']/g, c => (
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
-  ));
-}
-
-function markerSvgIcon(type){
-  const t = (type || "").toLowerCase();
-  let fill = '#dc2626', path = ICON_PATHS.pin;
-  if (t.includes('house')){ fill = '#2563eb'; path = ICON_PATHS.home; }
-  else if (t.includes('store') || t.includes('shop')){ fill = '#16a34a'; path = ICON_PATHS.store; }
-  else { fill = '#dc2626'; path = ICON_PATHS.pin; }
-  const isPin = !t.includes('house') && !t.includes('store') && !t.includes('shop');
-  const d = path.split(' M ').map((p, i) => i === 0 ? p : 'M ' + p)
-    .map(p => `<path d="${p.trim()}" fill="${fill}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>`).join('');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">${d}</svg>`;
-  return {
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(30, 30),
-    anchor: new google.maps.Point(15, isPin ? 28 : 15)
-  };
-}
-
-function pinColorForType(type){
-  const t = (type || '').toLowerCase();
-  if (t.includes('house')) return '#2563eb';
-  if (t.includes('store') || t.includes('shop')) return '#16a34a';
-  if (t.includes('landmark')) return '#dc2626';
-  return '#64748b';
-}
-
-function countPinsByType(pins){
-  const c = { house: 0, store: 0, landmark: 0, other: 0 };
-  pins.forEach(p => {
-    const t = (p.item.type || '').toLowerCase();
-    if (t.includes('house')) c.house++;
-    else if (t.includes('store') || t.includes('shop')) c.store++;
-    else if (t.includes('landmark')) c.landmark++;
-    else c.other++;
-  });
-  return c;
-}
-
-function renderPinSummary(counts, hasDetails, groupKey){
-  const total = counts.house + counts.store + counts.landmark + counts.other;
-  const chips = [];
-  if (counts.house) chips.push(`<span class="pin-chip house">${svgIcon('home', 13, 2.2)}<span>${counts.house}</span></span>`);
-  if (counts.store) chips.push(`<span class="pin-chip store">${svgIcon('store', 13, 2.2)}<span>${counts.store}</span></span>`);
-  if (counts.landmark) chips.push(`<span class="pin-chip landmark">${svgIcon('landmark', 13, 2.2)}<span>${counts.landmark}</span></span>`);
-  if (counts.other) chips.push(`<span class="pin-chip other"><span>${counts.other}</span></span>`);
-
-  if (total === 0){
-    return `<div class="pin-summary"><span class="pin-chip empty">No pins yet</span></div>`;
-  }
-
-  const showBtn = hasDetails
-    ? `<button class="show-pins-btn" data-toggle-pins="${esc(groupKey)}">Show&nbsp;▾</button>`
-    : '';
-
-  return `<div class="pin-summary">${chips.join('')}${showBtn}</div>`;
-}
-
-function distanceToSegmentMeters(p, a, b){
-  const R = 6371000, toRad = d => d * Math.PI / 180;
-  const latRef = toRad((a.lat + b.lat) / 2);
-  const X = lng => toRad(lng) * R * Math.cos(latRef);
-  const Y = lat => toRad(lat) * R;
-  const px = X(p.lng), py = Y(p.lat);
-  const ax = X(a.lng), ay = Y(a.lat);
-  const bx = X(b.lng), by = Y(b.lat);
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx*dx + dy*dy;
-  let t = len2 === 0 ? 0 : ((px-ax)*dx + (py-ay)*dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(px - (ax + t*dx), py - (ay + t*dy));
-}
-function distanceToPathMeters(p, coords){
-  let min = Infinity;
-  for (let i = 0; i < coords.length - 1; i++){
-    min = Math.min(min, distanceToSegmentMeters(p, coords[i], coords[i+1]));
-  }
-  if (coords.length === 1) min = distanceToSegmentMeters(p, coords[0], coords[0]);
-  return min;
-}
-function haversineMeters(a, b){
-  const R = 6371000, toRad = d => d * Math.PI / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
-  const x = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
-  return 2*R*Math.asin(Math.sqrt(x));
-}
-function projectPointOnSegment(p, a, b){
-  const R = 6371000, toRad = d => d * Math.PI / 180;
-  const latRef = toRad((a.lat + b.lat) / 2);
-  const X = lng => toRad(lng) * R * Math.cos(latRef);
-  const Y = lat => toRad(lat) * R;
-  const px = X(p.lng), py = Y(p.lat);
-  const ax = X(a.lng), ay = Y(a.lat);
-  const bx = X(b.lng), by = Y(b.lat);
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx*dx + dy*dy;
-  let t = len2 === 0 ? 0 : ((px-ax)*dx + (py-ay)*dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  const x = ax + t*dx, y = ay + t*dy;
-  return {
-    lat: y / R * 180 / Math.PI,
-    lng: x / (R * Math.cos(latRef)) * 180 / Math.PI
-  };
-}
-
-/* ============================================================ LONG-PRESS */
-function attachLongPress(marker, onLongPress, duration = 550){
-  let timer = null;
-  const start = () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => { timer = null; onLongPress(); }, duration);
-  };
-  const cancel = () => { if (timer){ clearTimeout(timer); timer = null; } };
-  ['mousedown','touchstart'].forEach(ev => google.maps.event.addListener(marker, ev, start));
-  ['mouseup','touchend','mouseout','dragstart','drag','dragend'].forEach(ev =>
-    google.maps.event.addListener(marker, ev, cancel)
-  );
-}
-
-/* ============================================================ RAY-CAST */
-function pointInPolygonRayCast(lat, lng, coords){
-  let inside = false;
-  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++){
-    const xi = Number(coords[i].lng), yi = Number(coords[i].lat);
-    const xj = Number(coords[j].lng), yj = Number(coords[j].lat);
-    const intersect = ((yi > lat) !== (yj > lat))
-      && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
-function pointInRing_(latLng, coords){
-  if (window.google && google.maps.geometry && google.maps.geometry.poly){
-    try {
-      const poly = new google.maps.Polygon({ paths: coords, geodesic: true });
-      if (google.maps.geometry.poly.containsLocation(latLng, poly)) return true;
-    } catch(e){}
-  }
-  return pointInPolygonRayCast(latLng.lat(), latLng.lng(), coords);
-}
-
-/* ============================================================ TRACE MEMBERSHIP */
-function traceContains_(t, latLng){
-  if (t.coords.length >= 3) return pointInRing_(latLng, t.coords);
-  if (t.coords.length >= 1){
-    const d = distanceToPathMeters({ lat: latLng.lat(), lng: latLng.lng() }, t.coords);
-    return d <= TRACE_RADIUS_METERS;
-  }
-  return false;
-}
-function findTraceContaining(latLng){
-  for (const t of allTraces){
-    if (t.parentId && traceContains_(t, latLng)) return t;
-  }
-  for (const t of allTraces){
-    if (!t.parentId && traceContains_(t, latLng)) return t;
-  }
-  return null;
-}
-
-/* ============================================================ TOASTS */
-function toast(msg, kind = 'info', ms = 2600){
-  const box = document.getElementById('toasts');
-  const el = document.createElement('div');
-  el.className = 'toast' + (kind !== 'info' ? ' ' + kind : '');
-  el.textContent = msg;
-  box.appendChild(el);
-  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 240); }, ms);
-}
-
-/* ============================================================ API */
-async function submitToSheet(payload){
-  await fetch(APPS_SCRIPT_URL, {
-    method: 'POST', mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  });
-}
-async function deleteOnServer(id){
-  const url = APPS_SCRIPT_URL + "?action=delete&id=" + encodeURIComponent(id) + "&t=" + Date.now();
-  const res = await fetch(url);
-  const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); } catch(e){ throw new Error("Invalid response from server"); }
-  if (!json || json.result !== 'success'){
-    throw new Error((json && json.message) || 'Server rejected the request');
-  }
-  return json;
-}
-async function refreshUntil(expectedAtLeast, maxAttempts = 6){
-  for (let attempt = 1; attempt <= maxAttempts; attempt++){
-    await new Promise(r => setTimeout(r, attempt === 1 ? 600 : 900));
-    clearOverlays();
-    const count = await fetchPlacesFromSheet();
-    if (typeof count === 'number' && count >= expectedAtLeast) return true;
-  }
-  return false;
-}
-
-/* ============================================================ AUTO-SAVE DRAFT */
-function saveDraft(){
-  if (!isTracing || currentTracePoints.length === 0){ clearDraft(); return; }
-  try {
-    const data = {
-      points: currentTracePoints.map(pt => ({
-        lat: typeof pt.lat === 'function' ? pt.lat() : pt.lat,
-        lng: typeof pt.lng === 'function' ? pt.lng() : pt.lng
-      })),
-      pendingParentId: pendingParentId,
-      savedAt: Date.now()
-    };
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-  } catch(e){}
-}
-function clearDraft(){ try { localStorage.removeItem(DRAFT_KEY); } catch(e){} }
-function loadDraft(){
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    const d = JSON.parse(raw);
-    if (Date.now() - (d.savedAt || 0) > 6 * 3600 * 1000){ clearDraft(); return null; }
-    return d;
-  } catch(e){ return null; }
-}
-
-/* ============================================================ GHOST-TAP */
-let pointerStart = null;
-function installPointerTracking(){
-  const mapEl = document.getElementById('map');
-  const down = (x, y) => { pointerStart = { x, y, t: Date.now() }; };
-  const move = (x, y) => {
-    if (!pointerStart) return;
-    if (Math.hypot(x - pointerStart.x, y - pointerStart.y) > DRAG_THRESHOLD_PX){
-      pointerStart.moved = true;
-    }
-  };
-  mapEl.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) down(t.clientX, t.clientY); }, { passive: true });
-  mapEl.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
-  mapEl.addEventListener('mousedown', e => down(e.clientX, e.clientY));
-  mapEl.addEventListener('mousemove', e => move(e.clientX, e.clientY));
-}
-function shouldIgnoreMapClick(){
-  if (markerInteractionLock) return true;
-  if (!pointerStart) return false;
-  if (pointerStart.moved) return true;
-  return false;
-}
-
-/* ============================================================ TRACE LABELS */
-function createTraceLabel(trace, pinCount){
-  let lat = 0, lng = 0;
-  trace.coords.forEach(c => { lat += Number(c.lat); lng += Number(c.lng); });
-  const pos = new google.maps.LatLng(lat / trace.coords.length, lng / trace.coords.length);
-
-  const div = document.createElement('div');
-  div.className = 'trace-label' + (trace.parentId ? ' small' : '');
-  div.innerHTML = `<span class="tl-name">${esc(trace.item.title)}</span>` +
-                  `<span class="tl-count">${pinCount} pin${pinCount === 1 ? '' : 's'}</span>`;
-
-  const overlay = new google.maps.OverlayView();
-  overlay.onAdd = function(){ this.getPanes().overlayMouseTarget.appendChild(div); };
-  overlay.draw = function(){
-    const proj = this.getProjection();
-    if (!proj) return;
-    const px = proj.fromLatLngToDivPixel(pos);
-    div.style.left = px.x + 'px';
-    div.style.top = px.y + 'px';
-  };
-  overlay.onRemove = function(){ if (div.parentNode) div.parentNode.removeChild(div); };
-  overlay.setMap(map);
-
-  return { overlay, div, position: pos, traceId: String(trace.item.id) };
-}
-function updateTraceLabelVisibility(){
-  if (!map) return;
-  const z = map.getZoom();
-  traceLabels.forEach(l => { l.div.style.display = z >= 12 ? '' : 'none'; });
-}
-
-/* ============================================================ MAP */
-function initMap(){
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: userLocation, zoom: 14, styles: MAP_STYLE,
-    mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
-    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
-    clickableIcons: false,
-    gestureHandling: "greedy",
-    draggable: true
-  });
-
-  installPointerTracking();
-
-  map.addListener("click", (e) => {
-    const ignore = shouldIgnoreMapClick();
-    pointerStart = null;
-    if (ignore) return;
-    if (panMode) return;
-    if (isTracing) addTracePoint(e.latLng);
-    else if (isPinning) addTempPin(e.latLng);
-  });
-
-  map.addListener("zoom_changed", updateTraceLabelVisibility);
-
-  if (navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-        map.setCenter(userLocation);
-        const you = new google.maps.Marker({
-          position: userLocation, map, title: "You are here", zIndex: 999,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8, fillColor: "#2563eb", fillOpacity: 1,
-            strokeColor: "#ffffff", strokeWeight: 3
-          }
-        });
-        drawnOverlays.push(you);
-      },
-      () => toast("Location permission denied", "error")
-    );
-  }
-
-  fetchPlacesFromSheet().then(() => {
-    const draft = loadDraft();
-    if (draft && draft.points && draft.points.length > 0){
-      setTimeout(() => {
-        showConfirm({
-          title: 'Resume unfinished trace?',
-          message: `An unfinished trace with ${draft.points.length} unsaved point${draft.points.length === 1 ? '' : 's'} was found from your previous session. Would you like to resume?`,
-          okText: 'Resume',
-          cancelText: 'Discard'
-        }).then(ok => {
-          if (ok){
-            startTracing(draft.pendingParentId || null, true);
-            draft.points.forEach(p => {
-              const ll = new google.maps.LatLng(p.lat, p.lng);
-              addTracePoint(ll, true);
-            });
-            toast('Draft restored', 'success');
-          } else {
-            clearDraft();
-          }
-        });
-      }, 400);
-    }
-  });
-}
-
-function lockMapForMarkerDrag(){
-  markerInteractionLock = true;
-  map.setOptions({ draggable: false, gestureHandling: 'none' });
-}
-function unlockMapAfterMarkerDrag(){
-  setTimeout(() => {
-    markerInteractionLock = false;
-    map.setOptions({ draggable: true, gestureHandling: 'greedy' });
-  }, 180);
-}
-
-/* ============================================================ JUMP TO PIN */
-function jumpToPin(pinId){
-  const entry = pinMarkerObjects.find(e => String(e.item.id) === String(pinId));
-  if (!entry){ toast("Pin location not found", "error"); return; }
-
-  map.panTo(entry.pos);
-  const targetZoom = Math.max(17, map.getZoom());
-  map.setZoom(targetZoom);
-
-  if (lastJumpMarker){
-    lastJumpMarker.setMap(null);
-    lastJumpMarker = null;
-  }
-
-  lastJumpMarker = new google.maps.Marker({
-    position: entry.pos,
-    map,
-    zIndex: 2000,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 16,
-      fillColor: pinColorForType(entry.item.type),
-      fillOpacity: 0.28,
-      strokeColor: pinColorForType(entry.item.type),
-      strokeWeight: 3,
-      strokeOpacity: 0.9
-    }
-  });
-
-  setTimeout(() => {
-    if (lastJumpMarker){
-      lastJumpMarker.setMap(null);
-      lastJumpMarker = null;
-    }
-  }, 2500);
-
-  haptic(12);
-}
-
-/* ============================================================ PAN MODE */
-function togglePanMode(){
-  if (!isTracing && !isPinning){
-    toast("Start trace or pin mode first to use pan mode", "info", 2400); return;
-  }
-  panMode = !panMode;
-  updatePanUI();
-  applyMarkerDraggability();
-  haptic(10);
-
-  if (panMode){
-    toast("Pan mode enabled — drag the map freely. Tap Draw to resume.", "info", 3000);
-    showMapBadge("Pan mode — drag the map freely", isTracing);
-  } else {
-    toast("Drawing resumed", "success", 2000);
-    updateMapBadgeForCurrentMode();
-  }
-}
-function applyMarkerDraggability(){
-  const shouldBeDraggable = isTracing && !panMode;
-  tempMarkers.forEach(m => m.setDraggable(shouldBeDraggable));
-}
-function updatePanUI(){
-  const inMode = isTracing || isPinning;
-  const fab = document.getElementById('panFab');
-  const fabIcon = document.getElementById('panFabIcon');
-  const fabText = document.getElementById('panFabText');
-  fab.hidden = !inMode;
-  if (inMode){
-    fab.classList.toggle('active', panMode);
-    fabIcon.innerHTML = svgIcon(panMode ? 'pencil' : 'pan', 16);
-    fabText.textContent = panMode ? "Draw" : "Pan map";
-  }
-  const btnTrace = document.getElementById('panBtnTrace');
-  const btnPin = document.getElementById('panBtnPin');
-  [btnTrace, btnPin].forEach(b => {
-    if (!b) return;
-    b.classList.toggle('btn-dark', panMode);
-    b.classList.toggle('btn-amber', !panMode);
-    b.innerHTML = `<span class="ic">${svgIcon(panMode ? 'pencil' : 'pan', 16)}</span> ${panMode ? 'Draw' : 'Pan'}`;
-  });
-  const traceBar = document.querySelector('#traceActiveControls .mode-bar');
-  const pinBar = document.querySelector('#pinActiveControls .mode-bar');
-  if (traceBar) traceBar.classList.toggle('dark', panMode);
-  if (pinBar) pinBar.classList.toggle('dark', panMode);
-  if (isTracing) updateTraceControls();
-}
-function updateMapBadgeForCurrentMode(){
-  if (isTracing){
-    if (pendingParentTrace){
-      showMapBadge(`Inside "${pendingParentTrace.item.title}" — tap to add points`, true);
-    } else {
-      showMapBadge("Trace mode — tap the map to draw", true);
-    }
-  } else if (isPinning){
-    showMapBadge("Pin mode — tap inside a traced area");
-  }
-}
-
-/* ============================================================ PIN CHIPS */
-document.getElementById('pinTypeChips').addEventListener('click', (e) => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  document.querySelectorAll('#pinTypeChips .chip').forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  haptic(6);
-});
-function selectedPinType(){
-  const active = document.querySelector('#pinTypeChips .chip.active');
-  return active ? active.dataset.type : 'Landmark';
-}
-
-/* ============================================================ PIN MODE */
-function togglePinMode(){
-  if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-  if (isTracing){ toast("Finish or cancel your current trace first", "error"); return; }
-  if (allTraces.length === 0){
-    toast("No traced areas yet — draw a trace first.", "error", 4000); return;
-  }
-  isPinning = true; currentTempPins = [];
-  panMode = false;
-  document.getElementById("pinModeBtn").hidden = true;
-  document.getElementById("traceBtn").disabled = true;
-  document.getElementById("pinActiveControls").hidden = false;
-  updatePanUI();
-  showMapBadge("Pin mode — tap inside a traced area");
-  haptic(12);
-}
-function addTempPin(latLng){
-  if (allTraces.length === 0){
-    toast("No traces loaded yet — try refreshing.", "error", 3200); return;
-  }
-  const containing = findTraceContaining(latLng);
-  if (!containing){
-    toast(`Pins must be placed inside a traced area. (${allTraces.length} trace${allTraces.length>1?'s':''} loaded)`, "error", 3600);
-    return;
-  }
-  const selectedType = selectedPinType();
-  currentTempPins.push({
-    id: Date.now().toString() + Math.random(),
-    latitude: latLng.lat(), longitude: latLng.lng(),
-    title: selectedType, type: selectedType, coordinates: null, parentId: ""
-  });
-  const marker = new google.maps.Marker({
-    position: latLng, map, title: selectedType,
-    icon: markerSvgIcon(selectedType),
-    animation: google.maps.Animation.DROP
-  });
-  tempPinMarkers.push(marker);
-  haptic(8);
-  const n = currentTempPins.length;
-  document.getElementById("pinCountText").textContent =
-    `${n} pin${n > 1 ? 's' : ''} ready · inside "${containing.item.title}"`;
-}
-function undoLastPin(){
-  if (!currentTempPins.length) return;
-  currentTempPins.pop();
-  const m = tempPinMarkers.pop();
-  if (m) m.setMap(null);
-  haptic(6);
-  document.getElementById("pinCountText").textContent = currentTempPins.length
-    ? `${currentTempPins.length} pin${currentTempPins.length > 1 ? 's' : ''} ready`
-    : 'Tap inside a traced area to drop a pin';
-}
-async function cancelPinMode(){
-  if (!isPinning && !currentTempPins.length) return;
-  const n = currentTempPins.length;
-  const ok = await showConfirm({
-    title: n > 0 ? 'Discard unsaved pins?' : 'Cancel pin mode?',
-    message: n > 0 ? `${n} unsaved pin${n > 1 ? 's' : ''} will be discarded.` : 'Nothing has been added yet.',
-    okText: n > 0 ? 'Discard' : 'Yes, cancel',
-    cancelText: 'Keep going'
-  });
-  if (!ok) return;
-  resetPinMode();
-  toast(n > 0 ? `Discarded ${n} pin(s)` : "Pin mode cancelled", "info", 2200);
-}
-async function finishPinning(btn){
-  if (!currentTempPins.length){ toast("Drop at least one pin first", "error"); return; }
-  await withButtonBusy(btn, "Saving…", async () => {
-    const pins = currentTempPins.slice();
-    isPinning = false;
-    const n = pins.length;
-    const expectedTotal = lastRecordCount + n;
-    toast(`Saving ${n} pin(s)…`);
-    let failed = 0;
-    for (const pin of pins){
-      try { await submitToSheet(pin); }
-      catch(e){ console.error("Network error:", pin, e); failed++; }
-    }
-    haptic(20);
-    if (failed > 0) toast(`${failed} of ${n} failed to send.`, "error", 5000);
-    else toast(`${n} pin(s) submitted — refreshing…`, "success");
-    resetPinMode();
-    const ok = await refreshUntil(expectedTotal);
-    toast(ok ? `Synced — ${n} new pin(s)` : "Saved, but the list has not updated. Tap Refresh.",
-          ok ? "success" : "error", 5000);
-  });
-}
-function resetPinMode(){
-  isPinning = false; currentTempPins = [];
-  panMode = false;
-  tempPinMarkers.forEach(m => m.setMap(null));
-  tempPinMarkers = [];
-  document.getElementById("pinModeBtn").hidden = false;
-  document.getElementById("traceBtn").disabled = false;
-  document.getElementById("pinActiveControls").hidden = true;
-  document.getElementById("panFab").hidden = true;
-  hideMapBadge();
-}
-
-/* ============================================================ TRACE MODE */
-function toggleTracing(){ startTracing(null); }
-
-function startTracing(parentId, silent){
-  if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-  if (isPinning){ toast("Finish pinning session first", "error"); return; }
-  if (isTracing) return;
-
-  pendingParentId = parentId ? String(parentId) : null;
-  pendingParentTrace = pendingParentId
-    ? (allTraces.find(t => String(t.item.id) === pendingParentId) || null)
-    : null;
-
-  if (pendingParentId && (!pendingParentTrace || pendingParentTrace.coords.length < 3)){
-    toast("Parent must be a closed shape with 3 or more points.", "error", 4000);
-    pendingParentId = null; pendingParentTrace = null;
-    return;
-  }
-
-  isTracing = true;
-  panMode = false;
-  currentTracePoints = [];
-  undoStack = [];
-
-  document.getElementById("traceBtn").hidden = true;
-  document.getElementById("pinModeBtn").disabled = true;
-  document.getElementById("traceActiveControls").hidden = false;
-
-  renderActiveTrace();
-  updateTraceControls();
-  updatePanUI();
-
-  if (pendingParentTrace){
-    fitBoundsToCoords(pendingParentTrace.coords);
-    showSubTraceParentOverlay(pendingParentTrace);
-    const hint = document.getElementById('traceHintText');
-    if (hint){
-      hint.innerHTML =
-        `• <b>Restricted area:</b> "${esc(pendingParentTrace.item.title)}"<br>` +
-        `• All points must remain <b>inside</b> the parent area<br>` +
-        `• Tap <b>Pan</b> to move the map`;
-    }
-    showMapBadge(`Sub-trace inside "${pendingParentTrace.item.title}" — stay inside`, true);
-    if (!silent) toast(`Drawing inside "${pendingParentTrace.item.title}"`, "info", 4200);
-  } else {
-    const hint = document.getElementById('traceHintText');
-    if (hint){
-      hint.innerHTML =
-        `• <b>Drag the yellow dot</b> to adjust a point's position<br>` +
-        `• Tap <b>Pan</b> to move the map`;
-    }
-    showMapBadge("Trace mode — tap the map to draw", true);
-  }
-  haptic(12);
-}
-function showSubTraceParentOverlay(parentTrace){
-  clearSubTraceParentOverlay();
-  subTraceParentOverlay = new google.maps.Polygon({
-    paths: parentTrace.coords, geodesic: true,
-    strokeColor: "#1d4ed8", strokeOpacity: 0.95, strokeWeight: 5,
-    fillColor: "#1d4ed8", fillOpacity: 0.10,
-    clickable: false, zIndex: 5, map
-  });
-}
-function clearSubTraceParentOverlay(){
-  if (subTraceParentOverlay){ subTraceParentOverlay.setMap(null); subTraceParentOverlay = null; }
-}
-async function cancelTracing(){
-  if (!isTracing) return;
-  const n = currentTracePoints.length;
-  const isSub = !!pendingParentTrace;
-  const ok = await showConfirm({
-    title: `Discard this ${isSub ? 'sub-trace' : 'trace'}?`,
-    message: n > 0 ? `${n} point${n > 1 ? 's' : ''} will be discarded.` : 'Nothing has been drawn yet.',
-    okText: 'Discard', cancelText: 'Keep drawing'
-  });
-  if (!ok) return;
-  const parentTitle = isSub ? pendingParentTrace.item.title : null;
-  resetTraceMode();
-  clearDraft();
-  toast(parentTitle ? `Sub-trace of "${parentTitle}" cancelled` : "Trace cancelled", "info", 2200);
-}
-function renderActiveTrace(){
-  if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
-  if (activePolygon){ activePolygon.setMap(null); activePolygon = null; }
-  if (currentTracePoints.length < 2) return;
-  const stroke = pendingParentTrace ? "#1d4ed8" : "#d97706";
-  if (currentTracePoints.length >= 3){
-    activePolygon = new google.maps.Polygon({
-      paths: currentTracePoints, geodesic: true,
-      strokeColor: stroke, strokeOpacity: 0.95, strokeWeight: 4,
-      fillColor: stroke, fillOpacity: 0.18,
-      clickable: false, zIndex: 10, map
-    });
-  } else {
-    activePolyline = new google.maps.Polyline({
-      path: currentTracePoints, geodesic: true,
-      strokeColor: stroke, strokeOpacity: 0.95, strokeWeight: 4,
-      clickable: false, zIndex: 10, map
-    });
-  }
-}
-function pushUndoSnapshot(){
-  undoStack.push(currentTracePoints.map(pt => ({
-    lat: typeof pt.lat === 'function' ? pt.lat() : pt.lat,
-    lng: typeof pt.lng === 'function' ? pt.lng() : pt.lng
-  })));
-  if (undoStack.length > 100) undoStack.shift();
-}
-function createTraceMarker(latLng, index){
-  const marker = new google.maps.Marker({
-    position: latLng, map,
-    draggable: !panMode, cursor: "grab", zIndex: 100 + index,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: POINT_SCALE,
-      fillColor: pendingParentTrace ? "#1d4ed8" : "#f59e0b",
-      fillOpacity: 1, strokeWeight: 2.5, strokeColor: "#ffffff"
-    }
-  });
-  marker.addListener("dragstart", () => lockMapForMarkerDrag());
-  marker.addListener("dragend", (e) => {
-    if (pendingParentTrace && !pointInRing_(e.latLng, pendingParentTrace.coords)){
-      toast(`Cannot move the point outside "${pendingParentTrace.item.title}".`, "error", 3000);
-      marker.setPosition(currentTracePoints[index]);
-      unlockMapAfterMarkerDrag();
-      return;
-    }
-    currentTracePoints[index] = e.latLng;
-    renderActiveTrace();
-    tempMarkers[index] = marker;
-    saveDraft();
-    haptic(6);
-    unlockMapAfterMarkerDrag();
-  });
-  attachLongPress(marker, async () => {
-    if (currentTracePoints.length <= 1) return;
-    const ok = await showConfirm({
-      title: 'Remove this point?', message: 'You can undo this with the Undo button.',
-      okText: 'Remove', cancelText: 'Keep'
-    });
-    if (!ok) return;
-    pushUndoSnapshot();
-    currentTracePoints.splice(index, 1);
-    rebuildTraceMarkers();
-    renderActiveTrace();
-    updateTraceControls();
-    saveDraft();
-    haptic(10);
-    toast('Point removed', "info", 1600);
-  });
-  return marker;
-}
-function addTracePoint(latLng, silent){
-  if (pendingParentTrace){
-    if (!pointInRing_(latLng, pendingParentTrace.coords)){
-      if (!silent) toast(`Tap was outside "${pendingParentTrace.item.title}". Points must remain inside the parent area.`, "error", 3200);
-      return;
-    }
-  }
-  pushUndoSnapshot();
-  const index = currentTracePoints.length;
-  currentTracePoints.push(latLng);
-  tempMarkers.push(createTraceMarker(latLng, index));
-  renderActiveTrace();
-  updateTraceControls();
-  saveDraft();
-  if (!silent) haptic(6);
-}
-function rebuildTraceMarkers(){
-  tempMarkers.forEach(m => m.setMap(null));
-  tempMarkers = [];
-  currentTracePoints.forEach((latLng, index) => {
-    tempMarkers.push(createTraceMarker(latLng, index));
-  });
-}
-function undoLastTracePoint(){
-  if (!currentTracePoints.length) return;
-  pushUndoSnapshot();
-  currentTracePoints.pop();
-  const m = tempMarkers.pop();
-  if (m) m.setMap(null);
-  renderActiveTrace();
-  updateTraceControls();
-  saveDraft();
-  haptic(6);
-}
-function performGlobalUndo(){
-  if (!isTracing || undoStack.length === 0) return;
-  const snapshot = undoStack.pop();
-  currentTracePoints = snapshot.map(p => new google.maps.LatLng(p.lat, p.lng));
-  rebuildTraceMarkers();
-  renderActiveTrace();
-  updateTraceControls();
-  saveDraft();
-  haptic(6);
-  toast('Undone', "info", 1400);
-}
-function updateTraceControls(){
-  const n = currentTracePoints.length;
-  const el = document.getElementById("traceCountText");
-  if (panMode){ el.textContent = "Pan mode — drag the map freely"; return; }
-  if (pendingParentTrace){
-    el.textContent = `Inside "${pendingParentTrace.item.title}" · ${n} point${n === 1 ? '' : 's'}`;
-  } else {
-    el.textContent = n === 0
-      ? "Tap the map to start drawing"
-      : `${n} point${n > 1 ? 's' : ''}${n >= 3 ? ' · area' : ''}`;
-  }
-}
-async function finishTracing(btn){
-  if (currentTracePoints.length < 3){
-    toast("Tap at least 3 points to make an area", "error"); return;
-  }
-  const isSub = !!pendingParentTrace;
-  if (pendingParentTrace){
-    const offending = currentTracePoints.find(pt =>
-      !pointInRing_(new google.maps.LatLng(
-        typeof pt.lat === 'function' ? pt.lat() : pt.lat,
-        typeof pt.lng === 'function' ? pt.lng() : pt.lng
-      ), pendingParentTrace.coords)
-    );
-    if (offending){
-      toast(`One or more points are outside "${pendingParentTrace.item.title}". Please adjust them before saving.`, "error", 4000);
-      return;
-    }
-  }
-
-  const result = await showModal({
-    title: isSub ? 'Name this sub-trace' : 'Name this traced area',
-    message: isSub ? `This sub-trace will be inside "${pendingParentTrace.item.title}".` : 'Give it a short, recognizable name.',
-    input: isSub ? 'Sub-area' : 'Property Boundary',
-    textarea: '',
-    okText: 'Save', cancelText: 'Cancel'
-  });
-  if (!result || !result.input || !result.input.trim()) return;
-
-  const title = result.input.trim();
-  const notes = (result.textarea || '').trim();
-
-  const pointsSnapshot = currentTracePoints.map(pt => ({
-    lat: typeof pt.lat === 'function' ? pt.lat() : pt.lat,
-    lng: typeof pt.lng === 'function' ? pt.lng() : pt.lng
-  }));
-  const parentIdSnapshot = pendingParentId;
-  const parentTraceSnapshot = pendingParentTrace;
-
-  await withButtonBusy(btn, "Saving…", async () => {
-    isTracing = false;
-    panMode = false;
-
-    let color;
-    if (parentTraceSnapshot){
-      try {
-        const parsed = JSON.parse(parentTraceSnapshot.item.coordinates);
-        if (parsed && parsed.color) color = parsed.color;
-      } catch(e){}
-    }
-    if (!color) color = pickNextPaletteColor(allTraces);
-
-    const traceRecord = {
-      id: Date.now().toString(),
-      title, type: "trace",
-      parentId: parentIdSnapshot || "",
-      notes: notes || "",
-      coordinates: JSON.stringify({ points: pointsSnapshot, color, closed: true })
-    };
-
-    if (traceRecord.coordinates.length > 49000){
-      toast(`Trace is too large (${pointsSnapshot.length} points). Try fewer points.`, "error", 6000);
-      isTracing = true;
-      return;
-    }
-
-    const expectedTotal = lastRecordCount + 1;
-    toast("Saving trace…");
-    try {
-      await submitToSheet(traceRecord);
-      haptic(20);
-      toast("Trace submitted — refreshing…", "success");
-    } catch(e){
-      console.error("Save error:", e);
-      toast("Save failed: network error", "error", 5000);
-    }
-    resetTraceMode();
-    clearDraft();
-    const ok = await refreshUntil(expectedTotal);
-    toast(ok ? `Synced — "${title}" is now visible` : "Saved, but the list has not updated. Tap Refresh.",
-          ok ? "success" : "error", 5000);
-  });
-}
-function resetTraceMode(){
-  isTracing = false;
-  pendingParentId = null;
-  pendingParentTrace = null;
-  panMode = false;
-  currentTracePoints = [];
-  undoStack = [];
-  tempMarkers.forEach(m => m.setMap(null));
-  tempMarkers = [];
-  if (activePolyline){ activePolyline.setMap(null); activePolyline = null; }
-  if (activePolygon){ activePolygon.setMap(null); activePolygon = null; }
-  clearSubTraceParentOverlay();
-  document.getElementById("traceBtn").hidden = false;
-  document.getElementById("pinModeBtn").disabled = false;
-  document.getElementById("traceActiveControls").hidden = true;
-  document.getElementById("panFab").hidden = true;
-  hideMapBadge();
-}
-
-/* ============================================================ EDIT MODE */
-function startEditingTrace(itemId){
-  if (isPinning || isTracing){ toast("Finish your current action first", "error"); return; }
-  if (isEditing){ toast("Already editing a shape", "error"); return; }
-
-  const t = allTraces.find(x => String(x.item.id) === String(itemId));
-  if (!t){ toast("Trace not found", "error"); return; }
-  if (t.coords.length < 3){ toast("Only shapes with 3 or more points can be edited", "error"); return; }
-
-  isEditing = true;
-  editingTraceItem = t.item;
-  editingCoords = t.coords.map(c => ({ lat: Number(c.lat), lng: Number(c.lng) }));
-
-  const panel = document.getElementById("editPanel");
-  panel.hidden = false;
-  const input = document.getElementById("editTraceNameInput");
-  const notesInput = document.getElementById("editTraceNotesInput");
-  input.value = t.item.title || "";
-  notesInput.value = t.item.notes || "";
-
-  document.getElementById("pinModeBtn").disabled = true;
-  document.getElementById("traceBtn").disabled = true;
-
-  document.querySelectorAll('.group.editing, .subgroup.editing').forEach(g => g.classList.remove('editing'));
-  const row = document.querySelector(`[data-shape-edit="${CSS.escape(String(itemId))}"]`);
-  if (row){
-    const card = row.closest('.subgroup') || row.closest('.group');
-    if (card) card.classList.add('editing');
-  }
-  showMapBadge("Edit shape — drag dots · tap edge to add · long-press dot to remove", true);
-  renderEditingShape();
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  haptic(12);
-
-  if (IS_TOUCH){
-    setTimeout(() => {
-      input.focus(); input.select();
-      input.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }, 300);
-  }
-}
-function renderEditingShape(){
-  if (editingPolyline){ editingPolyline.setMap(null); editingPolyline = null; }
-  if (editingFill){ editingFill.setMap(null); editingFill = null; }
-  editingMarkers.forEach(m => m.setMap(null));
-  editingMarkers = [];
-  if (editingCoords.length < 2) return;
-
-  editingFill = new google.maps.Polygon({
-    paths: editingCoords, geodesic: true,
-    strokeColor: "#2563eb", strokeOpacity: 1, strokeWeight: 6,
-    fillColor: "#2563eb", fillOpacity: 0.12,
-    clickable: false, map
-  });
-  editingPolyline = new google.maps.Polyline({
-    path: editingCoords, geodesic: true,
-    strokeColor: "#1d4ed8", strokeOpacity: 0, strokeWeight: 22,
-    clickable: true, map
-  });
-  editingPolyline.addListener("click", (e) => handleEdgeClick(e.latLng));
-
-  editingCoords.forEach((c, i) => {
-    const marker = new google.maps.Marker({
-      position: c, map, draggable: true, cursor: "grab", zIndex: 500 + i,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: VERTEX_SCALE, fillColor: "#f59e0b", fillOpacity: 1,
-        strokeWeight: 2.5, strokeColor: "#ffffff"
-      }
-    });
-    marker.addListener("dragstart", () => lockMapForMarkerDrag());
-    marker.addListener("dragend", (e) => {
-      editingCoords[i] = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-      updateEditingPaths();
-      unlockMapAfterMarkerDrag();
-      haptic(6);
-    });
-    marker.addListener("rightclick", () => removeEditingVertex(i));
-    attachLongPress(marker, () => removeEditingVertex(i));
-    editingMarkers.push(marker);
-  });
-}
-function updateEditingPaths(){
-  if (editingPolyline) editingPolyline.setPath(editingCoords);
-  if (editingFill) editingFill.setPath(editingCoords);
-}
-function handleEdgeClick(latLng){
-  const pt = { lat: latLng.lat(), lng: latLng.lng() };
-  let bestI = 0, bestDist = Infinity, bestProjected = pt;
-  for (let i = 0; i < editingCoords.length; i++){
-    const a = editingCoords[i];
-    const b = editingCoords[(i + 1) % editingCoords.length];
-    const proj = projectPointOnSegment(pt, a, b);
-    const d = haversineMeters(pt, proj);
-    if (d < bestDist){ bestDist = d; bestI = i; bestProjected = proj; }
-  }
-  const metersPerPixel = 156543.03392 * Math.cos(pt.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
-  const threshold = (IS_TOUCH ? 45 : 30) * metersPerPixel;
-  if (bestDist > threshold) return;
-  editingCoords.splice(bestI + 1, 0, bestProjected);
-  renderEditingShape();
-  haptic(8);
-  toast(`Point added (${editingCoords.length} total)`, "success", 1600);
-}
-async function removeEditingVertex(index){
-  if (editingCoords.length <= 3){ toast("A shape needs at least 3 points", "error"); return; }
-  const ok = await showConfirm({
-    title: 'Remove this point?', message: 'The shape will be redrawn without it.',
-    okText: 'Remove', cancelText: 'Keep'
-  });
-  if (!ok) return;
-  editingCoords.splice(index, 1);
-  renderEditingShape();
-  haptic(10);
-  toast(`Point removed (${editingCoords.length} remaining)`, "info", 1600);
-}
-async function saveEditedTrace(btn){
-  if (editingCoords.length < 3){ toast("At least 3 points are required", "error"); return; }
-  const nameInput = document.getElementById("editTraceNameInput");
-  const notesInput = document.getElementById("editTraceNotesInput");
-  const newTitle = (nameInput.value || "").trim();
-  if (!newTitle){ toast("Please enter a name", "error"); nameInput.focus(); return; }
-  const newNotes = (notesInput.value || "").trim();
-
-  await withButtonBusy(btn, "Saving…", async () => {
-    let color = "#2563eb";
-    try {
-      const parsed = JSON.parse(editingTraceItem.coordinates);
-      if (parsed && parsed.color) color = parsed.color;
-    } catch(e){}
-    const updated = {
-      ...editingTraceItem,
-      title: newTitle,
-      notes: newNotes,
-      coordinates: JSON.stringify({ points: editingCoords, color, closed: true })
-    };
-    if (updated.coordinates.length > 49000){
-      toast(`Shape is too large (${editingCoords.length} points).`, "error", 6000); return;
-    }
-    toast("Saving changes…");
-    try {
-      await submitToSheet(updated);
-      haptic(20);
-      toast("Changes submitted — refreshing…", "success");
-    } catch(e){
-      console.error("Save error:", e);
-      toast("Save failed: network error", "error", 5000);
-    }
-    cancelEditingTrace();
-    const ok = await refreshUntil(lastRecordCount, 4);
-    toast(ok ? "Synced — shape updated" : "Saved, but the list has not updated. Tap Refresh.",
-          ok ? "success" : "error", 5000);
-  });
-}
-function cancelEditingTrace(){
-  isEditing = false;
-  editingTraceItem = null;
-  editingCoords = [];
-  editingMarkers.forEach(m => m.setMap(null));
-  editingMarkers = [];
-  if (editingPolyline){ editingPolyline.setMap(null); editingPolyline = null; }
-  if (editingFill){ editingFill.setMap(null); editingFill = null; }
-  document.getElementById("editPanel").hidden = true;
-  document.getElementById("pinModeBtn").disabled = false;
-  document.getElementById("traceBtn").disabled = false;
-  document.querySelectorAll('.group.editing, .subgroup.editing').forEach(g => g.classList.remove('editing'));
-  hideMapBadge();
-}
-
-/* ============================================================ MAP BADGE */
-function showMapBadge(text, amber = false){
-  const b = document.getElementById('mapBadge');
-  if (!b) return;
-  b.hidden = false;
-  b.classList.toggle('amber', amber);
-  document.getElementById('mapBadgeText').textContent = text;
-}
-function hideMapBadge(){
-  const b = document.getElementById('mapBadge');
-  if (b) b.hidden = true;
-}
-
-/* ============================================================ DATA */
-function clearOverlays(){
-  drawnOverlays.forEach(o => o.setMap(null));
-  drawnOverlays = [];
-  featureIndex.clear();
-  traceLabels.forEach(l => l.overlay.setMap(null));
-  traceLabels = [];
-  if (clusterer) { clusterer.clearMarkers(); clusterer = null; }
-  pinMarkerObjects = [];
-  if (lastJumpMarker){ lastJumpMarker.setMap(null); lastJumpMarker = null; }
-}
-async function manualRefresh(btn){
-  await withButtonBusy(btn, "…", async () => {
-    toast("Refreshing…");
-    try {
-      clearOverlays();
-      const count = await fetchPlacesFromSheet();
-      toast(`Loaded ${count} record${count === 1 ? '' : 's'}`, "success");
-    } catch(e){ toast("Refresh failed", "error"); }
-  });
-}
-
-async function fetchPlacesFromSheet(){
-  const listContainer = document.getElementById("listContainer");
-  try {
-    const response = await fetch(APPS_SCRIPT_URL + "?nocache=" + Date.now());
-    allRecords = await response.json();
-    listContainer.innerHTML = "";
-
-    if (!Array.isArray(allRecords) || allRecords.length === 0){
-      allTraces = [];
-      lastRecordCount = 0;
-      listContainer.innerHTML =
-        `<div class="empty"><span class="big-ic">${svgIcon('map', 40, 1.5)}</span>No saved items yet.<br>Draw a main trace first (e.g. "anayan").</div>`;
-      document.getElementById('recordCount').textContent = '0';
-      return 0;
-    }
-
-    const traces = [], pins = [];
-    allRecords.forEach(item => {
-      if (item.coordinates && item.coordinates !== ""){
-        let coords = [], strokeColor = '#2563eb';
-        try {
-          let parsed = JSON.parse(item.coordinates);
-          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-          if (Array.isArray(parsed)) coords = parsed;
-          else if (parsed && parsed.points){
-            coords = parsed.points;
-            strokeColor = parsed.color || strokeColor;
-          }
-        } catch(e){ return; }
-        if (coords.length > 0){
-          traces.push({ item, coords, strokeColor,
-            parentId: item.parentId ? String(item.parentId) : "" });
-        }
-      } else if (item.latitude && item.longitude){
-        pins.push({ item, pos: { lat: parseFloat(item.latitude), lng: parseFloat(item.longitude) } });
-      }
-    });
-
-    allTraces = traces;
-
-    const traceById = new Map();
-    traces.forEach(t => traceById.set(String(t.item.id), t));
-    const roots = [];
-    const childrenMap = new Map();
-    traces.forEach(t => {
-      if (t.parentId && traceById.has(t.parentId)){
-        if (!childrenMap.has(t.parentId)) childrenMap.set(t.parentId, []);
-        childrenMap.get(t.parentId).push(t);
-      } else roots.push(t);
-    });
-
-    const sorted = [...traces].sort((a, b) => {
-      const aIsSub = a.parentId ? 1 : 0;
-      const bIsSub = b.parentId ? 1 : 0;
-      return aIsSub - bIsSub;
-    });
-
-    sorted.forEach(t => {
-      const isSub = !!t.parentId && traceById.has(t.parentId);
-      const hasChildren = childrenMap.has(String(t.item.id));
-      let fillOpacity, strokeWeight, strokeOpacity;
-      if (isSub){ fillOpacity = 0.24; strokeWeight = 3; strokeOpacity = 0.9; }
-      else if (hasChildren){ fillOpacity = 0.06; strokeWeight = 4; strokeOpacity = 0.65; }
-      else { fillOpacity = 0.18; strokeWeight = 4; strokeOpacity = 0.85; }
-
-      featureIndex.set(String(t.item.id), { kind:'trace', coords: t.coords });
-      let poly;
-      if (t.coords.length >= 3){
-        poly = new google.maps.Polygon({
-          paths: t.coords, geodesic: true,
-          strokeColor: t.strokeColor, strokeOpacity, strokeWeight,
-          fillColor: t.strokeColor, fillOpacity,
-          clickable: false, map
-        });
-      } else {
-        poly = new google.maps.Polyline({
-          path: t.coords, geodesic: true,
-          strokeColor: t.strokeColor, strokeOpacity: 0.85, strokeWeight: 4,
-          clickable: false, map
-        });
-      }
-      drawnOverlays.push(poly);
-    });
-
-    const pinsByTraceId = new Map();
-    const unassignedPins = [];
-    pins.forEach(pinObj => {
-      const containing = findTraceContaining(new google.maps.LatLng(pinObj.pos));
-      if (containing){
-        const key = String(containing.item.id);
-        if (!pinsByTraceId.has(key)) pinsByTraceId.set(key, []);
-        pinsByTraceId.get(key).push(pinObj);
-      } else unassignedPins.push(pinObj);
-      featureIndex.set(String(pinObj.item.id), { kind:'pin', pos: pinObj.pos });
-    });
-
-    pinMarkerObjects = [];
-    pins.forEach(pinObj => {
-      const marker = new google.maps.Marker({
-        position: pinObj.pos, title: pinObj.item.type || 'Pin',
-        icon: markerSvgIcon(pinObj.item.type)
-      });
-      pinMarkerObjects.push({ marker, item: pinObj.item, pos: pinObj.pos });
-    });
-
-    if (!window.__noClusterer && typeof markerClusterer !== 'undefined' && markerClusterer.MarkerClusterer){
-      clusterer = new markerClusterer.MarkerClusterer({
-        map,
-        markers: pinMarkerObjects.map(e => e.marker),
-        algorithm: new markerClusterer.GridAlgorithm({ gridSize: 60 })
-      });
-    } else {
-      pinMarkerObjects.forEach(e => e.marker.setMap(map));
-    }
-
-    traces.forEach(t => {
-      if (t.coords.length < 3) return;
-      const cnt = (pinsByTraceId.get(String(t.item.id)) || []).length;
-      traceLabels.push(createTraceLabel(t, cnt));
-    });
-    updateTraceLabelVisibility();
-
-    roots.forEach(root => {
-      const children = childrenMap.get(String(root.item.id)) || [];
-      const directPins = pinsByTraceId.get(String(root.item.id)) || [];
-      renderParentGroup(root, children, directPins, pinsByTraceId);
-    });
-    if (unassignedPins.length) renderUnassignedGroup(unassignedPins);
-
-    lastRecordCount = allRecords.length;
-    document.getElementById('recordCount').textContent = allRecords.length;
-    return allRecords.length;
-
-  } catch (error){
-    console.error("Error loading sheet data:", error);
-    listContainer.innerHTML =
-      `<div class="empty" style="color:var(--danger)">Couldn't load your saved items.</div>`;
-    return -1;
-  }
-}
-
-/* ============================================================ RENDERING */
-function renderParentGroup(rootTrace, children, directPins, pinsByTraceId){
-  const container = document.getElementById("listContainer");
-  const group = document.createElement("div");
-  group.className = "group";
-  group.dataset.traceId = String(rootTrace.item.id);
-
-  const treePins = [...directPins];
-  children.forEach(c => {
-    (pinsByTraceId.get(String(c.item.id)) || []).forEach(p => treePins.push(p));
-  });
-  const treeCounts = countPinsByType(treePins);
-
-  let childrenHtml = '';
-  children.forEach(child => {
-    const cps = pinsByTraceId.get(String(child.item.id)) || [];
-    childrenHtml += renderSubGroupHtml(child, cps);
-  });
-
-  const directDetailsHtml = directPins.length
-    ? renderPinDetails(directPins, `parent-${rootTrace.item.id}`)
-    : '';
-
-  group.innerHTML = `
-    <div class="group-head" data-toggle>
-      <span class="caret">▶</span>
-      <span class="swatch" style="background:${esc(rootTrace.strokeColor)}"></span>
-      <span class="group-title">${esc(rootTrace.item.title)}</span>
-      <button class="zoom-btn" data-zoom="${esc(rootTrace.item.id)}" title="Zoom">${svgIcon('target', 15)}</button>
-      <button class="icon-btn edit" data-shape-edit="${esc(rootTrace.item.id)}" title="Edit shape">${svgIcon('edit', 14)}</button>
-      <button class="icon-btn sub" data-add-sub="${esc(rootTrace.item.id)}" title="Add sub-trace">${svgIcon('plus', 14)}</button>
-      <button class="icon-btn del" data-del="${esc(rootTrace.item.id)}" data-del-title="${esc(rootTrace.item.title)}" data-del-kind="trace" title="Delete trace">${svgIcon('trash', 14)}</button>
-    </div>
-    <div class="group-body"><div class="inner">
-      ${renderPinSummary(treeCounts, directPins.length > 0, `parent-${rootTrace.item.id}`)}
-      ${childrenHtml}
-      ${directDetailsHtml}
-    </div></div>
-  `;
-  container.appendChild(group);
-}
-
-function renderSubGroupHtml(subTrace, childPins){
-  const counts = countPinsByType(childPins);
-  const detailsHtml = childPins.length
-    ? renderPinDetails(childPins, `sub-${subTrace.item.id}`)
-    : '';
-
-  return `
-    <div class="subgroup" data-trace-id="${esc(subTrace.item.id)}">
-      <div class="subgroup-head" data-toggle-sub>
-        <span class="caret">▶</span>
-        <span class="swatch" style="background:${esc(subTrace.strokeColor)}"></span>
-        <span class="subgroup-title">${esc(subTrace.item.title)}</span>
-        <button class="zoom-btn" data-zoom="${esc(subTrace.item.id)}" title="Zoom">${svgIcon('target', 14)}</button>
-        <button class="icon-btn edit" data-shape-edit="${esc(subTrace.item.id)}" title="Edit shape">${svgIcon('edit', 13)}</button>
-        <button class="icon-btn del" data-del="${esc(subTrace.item.id)}" data-del-title="${esc(subTrace.item.title)}" data-del-kind="trace" title="Delete sub-trace">${svgIcon('trash', 13)}</button>
-      </div>
-      ${renderPinSummary(counts, childPins.length > 0, `sub-${subTrace.item.id}`)}
-      ${detailsHtml}
-    </div>
-  `;
-}
-
-function renderPinDetails(pins, key){
-  const rows = pins.map(p => {
-    const color = pinColorForType(p.item.type);
-    const label = p.item.type || 'Pin';
-    return `
-      <div class="pin-row" data-goto-pin="${esc(p.item.id)}">
-        <span class="pin-dot" style="background:${color}"></span>
-        <span class="pin-type">${esc(label)}</span>
-        <span class="pin-go">${svgIcon('arrowRight', 13, 2.2)}</span>
-        <button class="pin-del" data-del="${esc(p.item.id)}" data-del-title="${esc(p.item.title)}" data-del-kind="pin" title="Delete pin">${svgIcon('trash', 13)}</button>
-      </div>`;
-  }).join('');
-  return `<div class="pin-details" data-pins-for="${esc(key)}"><div class="pin-details-list">${rows}</div></div>`;
-}
-
-function renderUnassignedGroup(unassignedPins){
-  const container = document.getElementById("listContainer");
-  const group = document.createElement("div");
-  group.className = "group";
-  const counts = countPinsByType(unassignedPins);
-  group.innerHTML = `
-    <div class="group-head" data-toggle>
-      <span class="caret">▶</span>
-      <span class="swatch" style="background:#94a3b8"></span>
-      <span class="group-title" style="color:var(--text-dim)">Unassigned pins</span>
-    </div>
-    <div class="group-body"><div class="inner">
-      ${renderPinSummary(counts, unassignedPins.length > 0, 'unassigned')}
-      ${renderPinDetails(unassignedPins, 'unassigned')}
-    </div></div>
-  `;
-  container.appendChild(group);
-}
-
-/* ============================================================ LIST CLICKS */
-document.getElementById('listContainer').addEventListener('click', (e) => {
-  const pinDelBtn = e.target.closest('.pin-del');
-  if (pinDelBtn){
-    e.stopPropagation();
-    deleteRecord(pinDelBtn.dataset.del, pinDelBtn.dataset.delTitle, pinDelBtn.dataset.delKind, pinDelBtn);
-    return;
-  }
-
-  const showPinsBtn = e.target.closest('[data-toggle-pins]');
-  if (showPinsBtn){
-    e.stopPropagation();
-    const scope = showPinsBtn.closest('.group, .subgroup');
-    if (scope){
-      scope.classList.toggle('pins-open');
-      const isOpen = scope.classList.contains('pins-open');
-      showPinsBtn.innerHTML = isOpen ? 'Hide&nbsp;▴' : 'Show&nbsp;▾';
-    }
-    haptic(6);
-    return;
-  }
-
-  const gotoPinRow = e.target.closest('[data-goto-pin]');
-  if (gotoPinRow){
-    e.stopPropagation();
-    jumpToPin(gotoPinRow.dataset.gotoPin);
-    return;
-  }
-
-  const addSubBtn = e.target.closest('[data-add-sub]');
-  if (addSubBtn){ e.stopPropagation(); startTracing(addSubBtn.dataset.addSub); return; }
-
-  const shapeEditBtn = e.target.closest('[data-shape-edit]');
-  if (shapeEditBtn){ e.stopPropagation(); startEditingTrace(shapeEditBtn.dataset.shapeEdit); return; }
-
-  const delBtn = e.target.closest('[data-del]');
-  if (delBtn){
-    e.stopPropagation();
-    deleteRecord(delBtn.dataset.del, delBtn.dataset.delTitle, delBtn.dataset.delKind, delBtn);
-    return;
-  }
-
-  const zoomBtn = e.target.closest('[data-zoom]');
-  if (zoomBtn){
-    e.stopPropagation();
-    const f = featureIndex.get(zoomBtn.dataset.zoom);
-    if (f && f.kind === 'trace') fitBoundsToCoords(f.coords);
-    return;
-  }
-
-  const subHead = e.target.closest('[data-toggle-sub]');
-  if (subHead){
-    e.stopPropagation();
-    subHead.closest('.subgroup').classList.toggle('open');
-    haptic(4);
-    return;
-  }
-  const head = e.target.closest('[data-toggle]');
-  if (head){
-    head.closest('.group').classList.toggle('open');
-    haptic(4);
-  }
-});
-
-/* ============================================================ DELETE */
-async function deleteRecord(id, title, kind, btn){
-  if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-  let childCount = 0;
-  if (kind === 'trace') childCount = allTraces.filter(t => t.parentId === String(id)).length;
-
-  let message;
-  if (kind === 'trace'){
-    message = `Delete the trace "${title}"?`;
-    if (childCount > 0) message += `\n\nThis trace has ${childCount} sub-trace(s). They will become top-level traces.`;
-    message += `\n\nPins inside it will NOT be deleted.`;
-  } else message = `Delete this pin?`;
-
-  const ok = await showConfirm({
-    title: kind === 'trace' ? 'Delete trace?' : 'Delete pin?',
-    message, okText: 'Delete', cancelText: 'Cancel'
-  });
-  if (!ok) return;
-
-  await withButtonBusy(btn, "…", async () => {
-    toast("Deleting…");
-    try {
-      await deleteOnServer(id);
-      haptic(20);
-      toast("Deleted", "success");
-      await new Promise(r => setTimeout(r, 400));
-      clearOverlays();
-      await fetchPlacesFromSheet();
-    } catch(e){
-      console.error("Delete failed:", e);
-      toast(`Delete failed: ${e.message}`, "error", 5000);
-    }
-  });
-}
-
-/* ============================================================ BOTTOM SHEET */
-function installBottomSheet(){
-  if (!IS_TOUCH || window.innerWidth > 768) return;
-  const sidebar = document.getElementById('sidebar');
-  const handle = document.getElementById('sheetHandle');
-  if (!sidebar || !handle) return;
-
-  const STATES = { collapsed: 18, half: 45, full: 85 };
-  let startY = 0, startHeightVh = 45, dragging = false;
-
-  function setHeight(vh){ sidebar.style.setProperty('--sheet-height', vh + 'dvh'); }
-  function getHeightVh(){ return (sidebar.getBoundingClientRect().height / window.innerHeight) * 100; }
-
-  handle.addEventListener('touchstart', (e) => {
-    startY = e.touches[0].clientY;
-    startHeightVh = getHeightVh();
-    dragging = true;
-    sidebar.classList.add('dragging');
-    e.preventDefault();
-  }, { passive: false });
-
-  handle.addEventListener('touchmove', (e) => {
-    if (!dragging) return;
-    const dy = e.touches[0].clientY - startY;
-    const newVh = Math.max(15, Math.min(92, startHeightVh - (dy / window.innerHeight) * 100));
-    setHeight(newVh);
-    e.preventDefault();
-  }, { passive: false });
-
-  handle.addEventListener('touchend', () => {
-    if (!dragging) return;
-    dragging = false;
-    sidebar.classList.remove('dragging');
-    const current = getHeightVh();
-    let nearest = 'half', bestDist = Infinity;
-    Object.entries(STATES).forEach(([name, v]) => {
-      const d = Math.abs(current - v);
-      if (d < bestDist){ bestDist = d; nearest = name; }
-    });
-    setHeight(STATES[nearest]);
-    haptic(6);
-  });
-
-  let lastTap = 0;
-  handle.addEventListener('touchend', () => {
-    const now = Date.now();
-    if (now - lastTap < 320){
-      const current = getHeightVh();
-      setHeight(current < 30 ? STATES.full : STATES.collapsed);
-      haptic(8);
-    }
-    lastTap = now;
-  });
-}
-
-/* ============================================================ KEYBOARD */
-function installKeyboardShortcuts(){
-  document.addEventListener('keydown', (e) => {
-    const tag = (e.target.tagName || '').toLowerCase();
-    if (tag === 'input' || tag === 'textarea') return;
-
-    if (e.ctrlKey || e.metaKey){
-      if (e.key === 'z' || e.key === 'Z'){
-        if (isTracing){ e.preventDefault(); performGlobalUndo(); }
-        return;
-      }
-      if (e.key === 's' || e.key === 'S'){
-        e.preventDefault();
-        if (isTracing && currentTracePoints.length >= 3){
-          finishTracing(document.getElementById('saveTraceBtn'));
-        } else if (isPinning && currentTempPins.length){
-          finishPinning(document.getElementById('savePinsBtn'));
-        } else if (isEditing && editingCoords.length >= 3){
-          saveEditedTrace(document.getElementById('saveEditBtn'));
-        }
-        return;
-      }
-      return;
-    }
-
-    switch (e.key){
-      case 'Escape':
-        if (isTracing) cancelTracing();
-        else if (isPinning) cancelPinMode();
-        else if (isEditing) cancelEditingTrace();
-        break;
-      case 't': case 'T':
-        if (!isTracing && !isPinning && !isEditing) toggleTracing();
-        break;
-      case 'p': case 'P':
-        if (!isTracing && !isPinning && !isEditing) togglePinMode();
-        break;
-      case 'd': case 'D':
-        if (isTracing || isPinning) togglePanMode();
-        break;
-    }
-  });
-}
-
-/* ============================================================ LEAVE WARNING */
-function installLeaveWarning(){
-  window.addEventListener('beforeunload', (e) => {
-    const busy = isTracing && currentTracePoints.length > 0;
-    const busyPin = isPinning && currentTempPins.length > 0;
-    const busyEdit = isEditing;
-    if (busy || busyPin || busyEdit){
-      saveDraft();
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
-    }
-  });
-}
-
-/* ============================================================ NAV */
-function fitBoundsToCoords(coords){
-  const bounds = new google.maps.LatLngBounds();
-  coords.forEach(pt => bounds.extend(pt));
-  map.fitBounds(bounds, { top: 70, right: 70, bottom: 70, left: 70 });
-}
-function goToCurrentGPS(){
-  map.panTo(userLocation);
-  map.setZoom(16);
-  haptic(10);
-  toast("Centered on your location");
-}
-
-/* ============================================================ BOOT */
-window.addEventListener('load', () => {
-  renderStaticIcons();
-  installBottomSheet();
-  installKeyboardShortcuts();
-  installLeaveWarning();
-});
-</script>
+<script src="app.js"></script>
 </body>
 </html>
