@@ -444,11 +444,11 @@ let allUsersCache = [];
 let currentPinId = null;
 let currentPinComments = [];
 
-// Coverage-specific state — tracks which pins form the covered area
+// Coverage-specific state
 let coveragePinEntries = [];
 let coverageHighlightMarkers = [];
-let rawPinData = [];              // undecorated pin list from the sheet
-let lastPinClickTime = 0;         // prevents map click from double-firing after a pin click
+let rawPinData = [];              // undecorated pins from the sheet
+let lastPinClickTime = 0;         // guards against map click firing after pin click
 
 /* ============================================================ HAPTIC */
 function haptic(ms = 8){ if (navigator.vibrate) navigator.vibrate(ms); }
@@ -738,59 +738,6 @@ function findOverlappingTrace(newCoords){
   return null;
 }
 
-/* ============================================================ PIN SNAPPING FOR COVERAGE */
-/* Find the closest pin within `maxMeters` of the tapped location. */
-function findNearestPin(latLng, maxMeters){
-  const target = { lat: latLng.lat(), lng: latLng.lng() };
-  let best = null, bestD = Infinity;
-  for (const entry of pinMarkerObjects){
-    const real = entry.realPos || entry.pos;
-    const d = haversineMeters(target, real);
-    if (d < bestD){ bestD = d; best = entry; }
-  }
-  return (best && bestD <= maxMeters) ? best : null;
-}
-
-function coverageAlreadyHasPin(pinId){
-  return coveragePinEntries.some(e => String(e.item.id) === String(pinId));
-}
-
-function addPinToCoverage(entry){
-  const pinId = String(entry.item.id);
-  if (coverageAlreadyHasPin(pinId)){
-    toast("That pin is already part of the coverage", "info", 1800);
-    return;
-  }
-
-  // Push the pin's TRUE location as the vertex
-  const real = entry.realPos || entry.pos;
-  const latLng = new google.maps.LatLng(real.lat, real.lng);
-
-  pushUndoSnapshot();
-  const index = currentTracePoints.length;
-  currentTracePoints.push(latLng);
-  tempMarkers.push(createTraceMarker(latLng, index));
-
-  coveragePinEntries.push(entry);
-
-    // Highlight overlay on the pin — NOT clickable so taps pass through to the pin
-  const hl = new google.maps.Marker({
-    position: real, map, zIndex: 400, clickable: false,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 20,
-      fillColor: "#2563eb", fillOpacity: 0.20,
-      strokeColor: "#2563eb", strokeWeight: 2.5, strokeOpacity: 0.95
-    }
-  });
-  coverageHighlightMarkers.push(hl);
-
-  renderActiveTrace();
-  updateCoverageControls();
-  saveDraft();
-  haptic(8);
-}
-
 /* ============================================================ TOASTS */
 function toast(msg, kind = 'info', ms = 2600){
   const box = document.getElementById('toasts');
@@ -953,6 +900,47 @@ function updateTraceLabelVisibility(){
   traceLabels.forEach(l => { l.div.style.display = z >= 12 ? '' : 'none'; });
 }
 
+/* ============================================================ PIN MARKER BUILDER */
+/* Re-renders pin markers. In coverage mode, pins sit at their TRUE locations
+   so tapping the pin you see adds exactly that pin. In normal mode, clusters
+   get fanned out so each is tappable. */
+function rebuildPinMarkers(){
+  if (clusterer){ clusterer.clearMarkers(); clusterer = null; }
+  pinMarkerObjects.forEach(e => { if (e.marker) e.marker.setMap(null); });
+  pinMarkerObjects = [];
+
+  const ordered = isCoverage ? rawPinData.map(p => ({ item:p.item, pos:p.pos, realPos:p.pos })) : declusterPins(rawPinData);
+
+  ordered.forEach(pinObj => {
+    const marker = new google.maps.Marker({
+      position: pinObj.pos, title: pinObj.item.type || 'Pin',
+      icon: markerSvgIcon(pinObj.item.type, pinObj.item.subtype)
+    });
+    marker.addListener("click", () => {
+      lastPinClickTime = Date.now();
+      const entry = pinMarkerObjects.find(e => e.marker === marker);
+      if (!entry) return;
+      if (isCoverage){ addPinToCoverage(entry); return; }
+      openPinSheet(entry.item.id);
+    });
+    pinMarkerObjects.push({
+      marker,
+      item: pinObj.item,
+      pos: pinObj.pos,
+      realPos: pinObj.realPos || pinObj.pos
+    });
+  });
+
+  if (!isCoverage && !window.__noClusterer && typeof markerClusterer !== 'undefined' && markerClusterer.MarkerClusterer){
+    clusterer = new markerClusterer.MarkerClusterer({
+      map, markers: pinMarkerObjects.map(e => e.marker),
+      algorithm: new markerClusterer.GridAlgorithm({ gridSize: 40 })
+    });
+  } else {
+    pinMarkerObjects.forEach(e => e.marker.setMap(map));
+  }
+}
+
 /* ============================================================ MAP */
 function initMap(){
   map = new google.maps.Map(document.getElementById("map"), {
@@ -973,9 +961,9 @@ function initMap(){
     if (panMode) return;
 
     if (isCoverage){
-      // If a pin click just fired, don't process the same tap again
+      // If a pin click just fired, don't process the same physical tap twice
       if (Date.now() - lastPinClickTime < 300) return;
-      // Otherwise: snap to nearest pin within a reasonable radius
+      // Fallback: snap to nearest pin within a generous radius
       const mpp = 156543.03392 * Math.cos(e.latLng.lat() * Math.PI / 180) / Math.pow(2, map.getZoom());
       const thresholdMeters = Math.max(35, 50 * mpp);
       const nearest = findNearestPin(e.latLng, thresholdMeters);
@@ -1142,13 +1130,62 @@ function selectedPin(){
   return { type, subtype: selectedSubtype || '' };
 }
 
+/* ============================================================ PIN SNAPPING / COVERAGE */
+function findNearestPin(latLng, maxMeters){
+  const target = { lat: latLng.lat(), lng: latLng.lng() };
+  let best = null, bestD = Infinity;
+  for (const entry of pinMarkerObjects){
+    const real = entry.realPos || entry.pos;
+    const d = haversineMeters(target, real);
+    if (d < bestD){ bestD = d; best = entry; }
+  }
+  return (best && bestD <= maxMeters) ? best : null;
+}
+function coverageAlreadyHasPin(pinId){
+  return coveragePinEntries.some(e => String(e.item.id) === String(pinId));
+}
+function addPinToCoverage(entry){
+  const pinId = String(entry.item.id);
+  if (coverageAlreadyHasPin(pinId)){
+    toast("That pin is already part of the coverage", "info", 1800);
+    return;
+  }
+
+  const real = entry.realPos || entry.pos;
+  const latLng = new google.maps.LatLng(real.lat, real.lng);
+
+  pushUndoSnapshot();
+  const index = currentTracePoints.length;
+  currentTracePoints.push(latLng);
+  tempMarkers.push(createTraceMarker(latLng, index));
+
+  coveragePinEntries.push(entry);
+
+  // Non-clickable highlight so it never steals taps from the pin underneath
+  const hl = new google.maps.Marker({
+    position: real, map, zIndex: 400, clickable: false,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 20,
+      fillColor: "#2563eb", fillOpacity: 0.20,
+      strokeColor: "#2563eb", strokeWeight: 2.5, strokeOpacity: 0.95
+    }
+  });
+  coverageHighlightMarkers.push(hl);
+
+  renderActiveTrace();
+  updateCoverageControls();
+  saveDraft();
+  haptic(8);
+}
+
 /* ============================================================ COVERAGE MODE */
 function toggleCoverage(){
   if (isCoverage){ cancelCoverage(); return; }
   if (isTracing){ toast("Finish or cancel your current trace first", "error"); return; }
   if (isPinning){ toast("Finish pinning first", "error"); return; }
   if (isEditing){ toast("Finish editing the shape first", "error"); return; }
-  if (pinMarkerObjects.length === 0){
+  if (rawPinData.length === 0){
     toast("No pins on the map yet — drop some pins first.", "error", 4000);
     return;
   }
@@ -1165,7 +1202,8 @@ function toggleCoverage(){
   document.getElementById("traceBtn").disabled = true;
   document.getElementById("coverageActiveControls").hidden = false;
 
-  rebuildPinMarkers();       // re-render at true positions (no decluster)
+  // Re-render pins at their TRUE locations for accurate tapping
+  rebuildPinMarkers();
 
   renderActiveTrace();
   updateCoverageControls();
@@ -1174,20 +1212,14 @@ function toggleCoverage(){
   toast("Tap pins one by one. Tap the last pin, then hit Save.", "info", 4800);
   haptic(12);
 }
-
 function updateCoverageControls(){
   const n = coveragePinEntries.length;
   const el = document.getElementById("coverageCountText");
   if (panMode){ el.textContent = "Pan mode — drag the map freely"; return; }
-  if (n === 0){
-    el.textContent = "Tap pins to include them";
-  } else if (n < 3){
-    el.textContent = `${n} pin${n === 1 ? '' : 's'} selected — need at least 3`;
-  } else {
-    el.textContent = `${n} pins selected · ready to save`;
-  }
+  if (n === 0) el.textContent = "Tap pins to include them";
+  else if (n < 3) el.textContent = `${n} pin${n === 1 ? '' : 's'} selected — need at least 3`;
+  else el.textContent = `${n} pins selected · ready to save`;
 }
-
 async function cancelCoverage(){
   if (!isCoverage) return;
   const n = coveragePinEntries.length;
@@ -1201,7 +1233,6 @@ async function cancelCoverage(){
   try { localStorage.removeItem(COVERAGE_DRAFT_KEY); } catch(e){}
   toast("Coverage cancelled", "info", 2200);
 }
-
 function resetCoverageMode(){
   isCoverage = false;
   panMode = false;
@@ -1219,9 +1250,10 @@ function resetCoverageMode(){
   document.getElementById("traceBtn").disabled = false;
   document.getElementById("coverageActiveControls").hidden = true;
   document.getElementById("panFab").hidden = true;
-  rebuildPinMarkers();       // restore declustering
+  // Restore declustered fan so clustered pins are individually tappable again
+  rebuildPinMarkers();
   hideMapBadge();
-
+}
 function finishCoverage(btn){
   if (coveragePinEntries.length < 3){
     toast("Select at least 3 pins to form a covered area", "error");
@@ -1236,8 +1268,7 @@ function openCoverageModal(){
   const dateInput = document.getElementById("coverageDate");
   const guideInput = document.getElementById("coverageGuide");
   const today = new Date();
-  const iso = today.toISOString().substring(0,10);
-  dateInput.value = iso;
+  dateInput.value = today.toISOString().substring(0,10);
   guideInput.value = "";
   modal.hidden = false;
   document.body.style.overflow = "hidden";
@@ -1270,16 +1301,10 @@ document.getElementById("coverageSave").addEventListener("click", async () => {
       id: Date.now().toString(),
       title: `Covered ${coveredAt}`,
       type: "coverage",
-      coveredAt,
-      guide,
-      pinIds,
+      coveredAt, guide, pinIds,
       coordinates: JSON.stringify({ points: pointsSnapshot, closed: true })
     };
-
-    if (record.coordinates.length > 49000){
-      toast("Area is too large — try fewer pins.", "error", 6000);
-      return;
-    }
+    if (record.coordinates.length > 49000){ toast("Area is too large — try fewer pins.", "error", 6000); return; }
 
     const expectedTotal = lastRecordCount + 1;
     toast("Saving covered area…");
@@ -1424,8 +1449,7 @@ function openPinSheet(pinId){
   document.getElementById("pinSheetName").textContent = displayName;
   document.getElementById("pinSheetType").textContent = fullType;
 
-  const footer = document.getElementById("pinSheetFooter");
-  footer.hidden = !isMapper();
+  document.getElementById("pinSheetFooter").hidden = !isMapper();
 
   const textarea = document.getElementById("pinSheetCommentInput");
   textarea.value = "";
@@ -1720,13 +1744,9 @@ function renderActiveTrace(){
   if (currentTracePoints.length < 2) return;
 
   let stroke, fillColor, fillOp, weight;
-  if (isCoverage){
-    stroke = '#2563eb'; fillColor = '#3b82f6'; fillOp = 0.14; weight = 2.5;
-  } else if (pendingParentTrace){
-    stroke = "#1d4ed8"; fillColor = "#1d4ed8"; fillOp = 0.18; weight = 4;
-  } else {
-    stroke = "#d97706"; fillColor = "#d97706"; fillOp = 0.18; weight = 4;
-  }
+  if (isCoverage){ stroke = '#2563eb'; fillColor = '#3b82f6'; fillOp = 0.14; weight = 2.5; }
+  else if (pendingParentTrace){ stroke = "#1d4ed8"; fillColor = "#1d4ed8"; fillOp = 0.18; weight = 4; }
+  else { stroke = "#d97706"; fillColor = "#d97706"; fillOp = 0.18; weight = 4; }
 
   if (currentTracePoints.length >= 3){
     activePolygon = new google.maps.Polygon({
@@ -1757,7 +1777,7 @@ function createTraceMarker(latLng, index){
   const fillColor = isCoverage ? "#2563eb" : (pendingParentTrace ? "#1d4ed8" : "#f59e0b");
   const marker = new google.maps.Marker({
     position: latLng, map,
-    draggable: !panMode, cursor: "grab", zIndex: 100 + index,
+    draggable: !panMode && !isCoverage, cursor: "grab", zIndex: 100 + index,
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
       scale: POINT_SCALE,
@@ -1765,22 +1785,35 @@ function createTraceMarker(latLng, index){
       strokeWeight: 2.5, strokeColor: "#ffffff"
     }
   });
+  if (isCoverage){
+    // Non-draggable; still long-pressable to remove
+    attachLongPress(marker, async () => {
+      const ok = await showConfirm({
+        title: 'Remove this pin from coverage?',
+        message: 'You can re-add it later by tapping the pin again.',
+        okText: 'Remove', cancelText: 'Keep'
+      });
+      if (!ok) return;
+      const idx = tempMarkers.indexOf(marker);
+      if (idx < 0) return;
+      pushUndoSnapshot();
+      removeCoverageEntryAt(idx);
+      renderActiveTrace();
+      updateCoverageControls();
+      saveDraft();
+      haptic(10);
+    });
+    return marker;
+  }
   marker.addListener("dragstart", () => lockMapForMarkerDrag());
   marker.addListener("dragend", (e) => {
-    if (isCoverage){
-      // Snap dragged vertex back — vertices must stay at pin positions
-      marker.setPosition(currentTracePoints[index]);
-      toast("Coverage vertices are pinned to the houses you selected. Use Undo to remove.", "info", 2600);
-      unlockMapAfterMarkerDrag();
-      return;
-    }
     if (pendingParentTrace && !pointInRing_(e.latLng, pendingParentTrace.coords)){
       toast(`Cannot move the point outside "${pendingParentTrace.item.title}".`, "error", 3000);
       marker.setPosition(currentTracePoints[index]);
       unlockMapAfterMarkerDrag();
       return;
     }
-    if (!isCoverage && PREVENT_TRACE_OVERLAP){
+    if (PREVENT_TRACE_OVERLAP){
       const conflict = findOtherTraceContainingPoint(e.latLng);
       if (conflict){
         toast(`Can't place this point inside "${conflict.item.title}". Traces can't overlap.`, "error", 3200);
@@ -1804,22 +1837,16 @@ function createTraceMarker(latLng, index){
     });
     if (!ok) return;
     pushUndoSnapshot();
-    if (isCoverage){
-      removeCoverageEntryAt(index);
-    } else {
-      currentTracePoints.splice(index, 1);
-      rebuildTraceMarkers();
-    }
+    currentTracePoints.splice(index, 1);
+    rebuildTraceMarkers();
     renderActiveTrace();
     if (isTracing) updateTraceControls();
-    if (isCoverage) updateCoverageControls();
     saveDraft();
     haptic(10);
     toast('Point removed', "info", 1600);
   });
   return marker;
 }
-
 function removeCoverageEntryAt(index){
   currentTracePoints.splice(index, 1);
   coveragePinEntries.splice(index, 1);
@@ -1827,7 +1854,6 @@ function removeCoverageEntryAt(index){
   if (hl[0]) hl[0].setMap(null);
   rebuildTraceMarkers();
 }
-
 function addTracePoint(latLng, silent){
   if (pendingParentTrace){
     if (!pointInRing_(latLng, pendingParentTrace.coords)){
@@ -1863,7 +1889,6 @@ function undoLastTracePoint(){
   pushUndoSnapshot();
 
   if (isCoverage){
-    // Undo in coverage mode: remove last vertex AND its pin entry AND its highlight
     currentTracePoints.pop();
     const m = tempMarkers.pop();
     if (m) m.setMap(null);
@@ -1888,7 +1913,6 @@ function performGlobalUndo(){
   currentTracePoints = snapshot.points.map(p => new google.maps.LatLng(p.lat, p.lng));
 
   if (isCoverage){
-    // Restore pin entries and highlight overlays to match snapshot
     coverageHighlightMarkers.forEach(m => m.setMap(null));
     coverageHighlightMarkers = [];
     const wantedIds = snapshot.pinEntryIds || [];
@@ -1899,7 +1923,7 @@ function performGlobalUndo(){
       coveragePinEntries.push(entry);
       const real = entry.realPos || entry.pos;
       const hl = new google.maps.Marker({
-        position: real, map, zIndex: 400,
+        position: real, map, zIndex: 400, clickable: false,
         icon: { path: google.maps.SymbolPath.CIRCLE, scale: 20,
                 fillColor: "#2563eb", fillOpacity: 0.20,
                 strokeColor: "#2563eb", strokeWeight: 2.5, strokeOpacity: 0.95 }
@@ -2368,6 +2392,7 @@ function clearOverlays(){
   traceLabels.forEach(l => l.overlay.setMap(null));
   traceLabels = [];
   if (clusterer) { clusterer.clearMarkers(); clusterer = null; }
+  pinMarkerObjects.forEach(e => { if (e.marker) e.marker.setMap(null); });
   pinMarkerObjects = [];
   if (lastJumpMarker){ lastJumpMarker.setMap(null); lastJumpMarker = null; }
 }
@@ -2383,47 +2408,6 @@ async function manualRefresh(btn){
   });
 }
 
-/* Re-renders pin markers. Uses raw positions during coverage mode so taps
-   line up with the pin icons the user actually sees. */
-function rebuildPinMarkers(){
-  if (clusterer){ clusterer.clearMarkers(); clusterer = null; }
-  pinMarkerObjects.forEach(e => e.marker.setMap(null));
-  pinMarkerObjects = [];
-
-  const ordered = isCoverage ? rawPinData : declusterPins(rawPinData);
-
-  ordered.forEach(pinObj => {
-    const marker = new google.maps.Marker({
-      position: pinObj.pos, title: pinObj.item.type || 'Pin',
-      icon: markerSvgIcon(pinObj.item.type, pinObj.item.subtype)
-    });
-    marker.addListener("click", () => {
-      lastPinClickTime = Date.now();
-      const entry = pinMarkerObjects.find(e => e.marker === marker);
-      if (!entry) return;
-      if (isCoverage){ addPinToCoverage(entry); return; }
-      openPinSheet(entry.item.id);
-    });
-    pinMarkerObjects.push({
-      marker,
-      item: pinObj.item,
-      pos: pinObj.pos,
-      realPos: pinObj.realPos || pinObj.pos
-    });
-  });
-
-  // Only cluster in normal mode; skip clustering in coverage mode
-  if (!isCoverage && !window.__noClusterer && typeof markerClusterer !== 'undefined' && markerClusterer.MarkerClusterer){
-    clusterer = new markerClusterer.MarkerClusterer({
-      map, markers: pinMarkerObjects.map(e => e.marker),
-      algorithm: new markerClusterer.GridAlgorithm({ gridSize: 40 })
-    });
-  } else {
-    pinMarkerObjects.forEach(e => e.marker.setMap(map));
-  }
-}
-
-
 async function fetchPlacesFromSheet(){
   const listContainer = document.getElementById("listContainer");
   try {
@@ -2432,7 +2416,7 @@ async function fetchPlacesFromSheet(){
     listContainer.innerHTML = "";
 
     if (!Array.isArray(allRecords) || allRecords.length === 0){
-      allTraces = []; allCoverages = [];
+      allTraces = []; allCoverages = []; rawPinData = [];
       lastRecordCount = 0;
       listContainer.innerHTML = `<div class="empty"><span class="big-ic">${svgIcon('map', 40, 1.5)}</span>No saved items yet.</div>`;
       document.getElementById('recordCount').textContent = '0';
@@ -2543,7 +2527,8 @@ async function fetchPlacesFromSheet(){
       featureIndex.set(String(pinObj.item.id), { kind:'pin', pos: pinObj.pos });
     });
 
-        rawPinData = pins.map(p => ({ item: p.item, pos: p.pos, realPos: p.pos }));
+    // Store raw pin data; rebuildPinMarkers() chooses positions based on mode
+    rawPinData = pins.map(p => ({ item: p.item, pos: p.pos, realPos: p.pos }));
     rebuildPinMarkers();
 
     traces.forEach(t => {
