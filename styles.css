@@ -932,3 +932,71 @@ body[data-role="viewer"]  [data-role="mapper"] {
   .admin-section{padding:16px 14px}
   .pin-sheet-action span:last-child{font-size:.6rem}
 }
+
+/* ============================================================ COVERED AREAS (nested) */
+.coverage-list{
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 12px 10px 12px;
+}
+.coverage-list.nested{
+  padding: 0 10px 8px 10px;
+}
+.coverage-sub{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: #f0f7ff;
+  border-left: 3px solid #2563eb;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: background .14s;
+  touch-action: manipulation;
+}
+.coverage-sub:hover{ background: #e0efff; }
+.coverage-sub.nested{
+  background: #f5faff;
+  border-left-color: #93c5fd;
+}
+.coverage-sub .cov-icon{
+  flex-shrink: 0;
+  color: #2563eb;
+  display: grid; place-items: center;
+}
+.coverage-sub.nested .cov-icon{ color: #60a5fa; }
+.coverage-sub .cov-date{
+  flex-shrink: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 700;
+  color: #1e40af;
+  letter-spacing: -0.01em;
+}
+.coverage-sub.nested .cov-date{ color: #1d4ed8; font-weight: 600; }
+.coverage-sub .cov-meta{
+  flex: 1;
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: .66rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coverage-sub .zoom-btn,
+.coverage-sub .pin-del{
+  padding: 4px;
+  flex-shrink: 0;
+}
+.coverage-sub .pin-del{
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  display: grid; place-items: center;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all .14s;
+}
+.coverage-sub .pin-del:hover{ background: var(--danger); color: #fff; }

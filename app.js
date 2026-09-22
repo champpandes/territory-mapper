@@ -867,12 +867,28 @@ function createTraceLabel(trace, pinCount){
   return { overlay, div, position: pos, traceId: String(trace.item.id) };
 }
 
+function formatCoverageDate(raw){
+  if (!raw) return "—";
+  const s = String(raw).trim();
+  if (!s) return "—";
+
+  // Try to parse it as a Date — this handles both "2026-09-22" and
+  // full ISO timestamps like "2026-09-21T16:00:00.000Z". Using the
+  // *local* timezone getters means the Philippines user sees the day
+  // they actually picked.
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
 function createCoverageLabel(cov){
   let lat = 0, lng = 0;
   cov.coords.forEach(c => { lat += Number(c.lat); lng += Number(c.lng); });
   const pos = new google.maps.LatLng(lat / cov.coords.length, lng / cov.coords.length);
 
-  const date = cov.item.coveredAt || "";
+  const date = formatCoverageDate(cov.item.coveredAt);
   const guide = cov.item.guide || "—";
   const pinCount = String(cov.item.pinIds || "").split(",").filter(s => s.trim()).length;
   const div = document.createElement('div');
@@ -2510,6 +2526,37 @@ async function fetchPlacesFromSheet(){
       }
       drawnOverlays.push(poly);
     });
+    // Attach each coverage to the *root* trace that contains it.
+    // Uses geometric containment (centroid inside polygon), then walks up
+    // to the top-level parent so coverages always land under a MAIN trace.
+    const coveragesByRootId = new Map();
+    coverages.forEach(cov => {
+      if (cov.coords.length < 3) return;
+
+      let lat = 0, lng = 0;
+      cov.coords.forEach(p => { lat += Number(p.lat); lng += Number(p.lng); });
+      const centroid = new google.maps.LatLng(lat / cov.coords.length, lng / cov.coords.length);
+
+      let containing = null;
+      for (const t of traces){
+        if (t.coords.length < 3) continue;
+        if (pointInRing_(centroid, t.coords)){ containing = t; break; }
+      }
+      if (!containing) return;
+
+      // Walk up to the top-level parent
+      let root = containing;
+      let guard = 0;
+      while (root.parentId && guard++ < 20){
+        const parent = traces.find(x => String(x.item.id) === String(root.parentId));
+        if (!parent) break;
+        root = parent;
+      }
+
+      const key = String(root.item.id);
+      if (!coveragesByRootId.has(key)) coveragesByRootId.set(key, []);
+      coveragesByRootId.get(key).push(cov);
+    });
 
     const pinsByTraceId = new Map();
     const unassignedPins = [];
@@ -2541,10 +2588,9 @@ async function fetchPlacesFromSheet(){
     roots.forEach(root => {
       const children = childrenMap.get(String(root.item.id)) || [];
       const directPins = pinsByTraceId.get(String(root.item.id)) || [];
-      renderParentGroup(root, children, directPins, pinsByTraceId);
+      renderParentGroup(root, children, directPins, pinsByTraceId, coveragesByRootId);
     });
     if (unassignedPins.length) renderUnassignedGroup(unassignedPins);
-    if (coverages.length) renderCoverageGroup(coverages);
 
     lastRecordCount = allRecords.length;
     document.getElementById('recordCount').textContent = allRecords.length;
@@ -2666,7 +2712,7 @@ function traceActionButtons(id, title, isSub){
   `;
 }
 
-function renderParentGroup(rootTrace, children, directPins, pinsByTraceId){
+function renderParentGroup(rootTrace, children, directPins, pinsByTraceId, coveragesByRootId){
   const container = document.getElementById("listContainer");
   const group = document.createElement("div");
   group.className = "group";
@@ -2676,9 +2722,17 @@ function renderParentGroup(rootTrace, children, directPins, pinsByTraceId){
   children.forEach(c => { (pinsByTraceId.get(String(c.item.id)) || []).forEach(p => treePins.push(p)); });
   const treeCounts = countPinsByType(treePins);
 
-  const childrenHtml = children.map(child => renderSubGroupHtml(child, pinsByTraceId.get(String(child.item.id)) || [])).join('');
+  const childrenHtml = children.map(child =>
+    renderSubGroupHtml(child, pinsByTraceId.get(String(child.item.id)) || [])
+  ).join('');
+
   const directDetailsHtml = directPins.length ? renderPinDetails(directPins, `parent-${rootTrace.item.id}`) : '';
   const notesHtml = rootTrace.item.notes ? `<div class="trace-notes">${esc(rootTrace.item.notes)}</div>` : '';
+
+  const directCovs = coveragesByRootId ? (coveragesByRootId.get(String(rootTrace.item.id)) || []) : [];
+  const directCovHtml = directCovs.length
+    ? `<div class="coverage-list">${directCovs.map(c => renderCoverageRowHtml(c, false)).join('')}</div>`
+    : '';
 
   group.innerHTML = `
     <div class="group-head" data-toggle>
@@ -2692,6 +2746,7 @@ function renderParentGroup(rootTrace, children, directPins, pinsByTraceId){
       ${renderPinSummary(treeCounts, directPins.length > 0, `parent-${rootTrace.item.id}`)}
       ${childrenHtml}
       ${directDetailsHtml}
+      ${directCovHtml}
     </div></div>
   `;
   container.appendChild(group);
@@ -2762,6 +2817,25 @@ function renderUnassignedGroup(unassignedPins){
   container.appendChild(group);
 }
 
+function renderCoverageRowHtml(cov, isSub){
+  const date = formatCoverageDate(cov.item.coveredAt);
+  const guide = cov.item.guide || "—";
+  const pinCount = String(cov.item.pinIds || "").split(",").filter(s => s.trim()).length;
+  const searchText = (date + ' ' + guide + ' coverage').toLowerCase();
+  const delBtn = isMapper()
+    ? `<button class="pin-del" data-del="${esc(cov.item.id)}" data-del-title="Covered ${esc(date)}" data-del-kind="coverage" title="Delete">${svgIcon('trash',12)}</button>`
+    : '';
+  return `
+    <div class="coverage-sub${isSub ? ' nested' : ''}" data-coverage-id="${esc(cov.item.id)}" data-search="${esc(searchText)}">
+      <span class="cov-icon">${svgIcon('target', 12, 2.2)}</span>
+      <span class="cov-date">${esc(date)}</span>
+      <span class="cov-meta">${pinCount} pin${pinCount === 1 ? '' : 's'} · ${esc(guide)}</span>
+      <button class="zoom-btn" data-zoom="${esc(cov.item.id)}" title="Zoom">${svgIcon('target',12)}</button>
+      ${delBtn}
+    </div>
+  `;
+}
+
 function renderCoverageGroup(coverages){
   const container = document.getElementById("listContainer");
   const group = document.createElement("div");
@@ -2769,7 +2843,7 @@ function renderCoverageGroup(coverages){
   const canDelete = isMapper();
 
   const rows = coverages.map(c => {
-    const date = c.item.coveredAt || "—";
+    const date = formatCoverageDate(c.item.coveredAt);
     const guide = c.item.guide || "—";
     const pinCount = String(c.item.pinIds || "").split(",").filter(s => s.trim()).length;
     const searchText = (date + ' ' + guide + ' coverage').toLowerCase();
