@@ -77,7 +77,6 @@ function renderStaticIcons(){
 }
 
 /* ============================================================ CONFIG */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD9x7ztrDySel0ERqDRS558dRZVVXsGMJS37c2pBOYC3DolP96R9F2M3LfpJXycW9rlA/exec";
 const TRACE_RADIUS_METERS = 300;
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const POINT_SCALE  = IS_TOUCH ? 11 : 7;
@@ -122,36 +121,6 @@ function isAdmin(){ return role() === "admin"; }
 function isViewer(){ return role() === "viewer"; }
 function applyRoleToBody(){ document.body.setAttribute("data-role", currentUser ? currentUser.role : "viewer"); }
 
-/* ============================================================ AUTH API */
-async function authPost(payload){
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  });
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch(e){ throw new Error("Invalid response from server"); }
-}
-async function authGet(params){
-  const qs = Object.entries(params).map(([k,v]) =>
-    encodeURIComponent(k) + "=" + encodeURIComponent(v)
-  ).join("&");
-  const res = await fetch(APPS_SCRIPT_URL + "?" + qs + "&t=" + Date.now());
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch(e){ throw new Error("Invalid response from server"); }
-}
-async function verifyStoredToken(){
-  const stored = loadStoredAuth();
-  if (!stored) return null;
-  try {
-    const res = await authGet({ action:'verify', token: stored.token });
-    if (res && res.valid && res.user){ saveAuth(stored.token, res.user); return res.user; }
-  } catch(e){}
-  clearAuth();
-  return null;
-}
 
 /* ============================================================ AUTH UI */
 let authMode = "login";
@@ -774,31 +743,7 @@ function toast(msg, kind = 'info', ms = 2600){
 }
 
 /* ============================================================ API */
-async function submitToSheet(payload){
-  const res = await authPost({ ...payload, token: currentToken });
-  if (res && res.result === "error"){
-    if (/sign in|permission/i.test(res.message || "")) handleAuthExpired();
-    throw new Error(res.message || "Server rejected the request");
-  }
-  return res;
-}
-async function deleteOnServer(id){
-  const res = await authPost({ action:'delete', id, token: currentToken });
-  if (!res || res.result !== 'success'){
-    if (res && /sign in|permission/i.test(res.message || "")) handleAuthExpired();
-    throw new Error((res && res.message) || 'Server rejected the request');
-  }
-  return res;
-}
-async function refreshUntil(expectedAtLeast, maxAttempts = 6){
-  for (let attempt = 1; attempt <= maxAttempts; attempt++){
-    await new Promise(r => setTimeout(r, attempt === 1 ? 600 : 900));
-    clearOverlays();
-    const count = await fetchPlacesFromSheet();
-    if (typeof count === 'number' && count >= expectedAtLeast) return true;
-  }
-  return false;
-}
+
 function handleAuthExpired(){
   clearAuth(); applyRoleToBody();
   toast("Your session expired. Please sign in again.", "error", 5000);
@@ -2876,8 +2821,7 @@ async function manualRefresh(btn){
 async function fetchPlacesFromSheet(){
   const listContainer = document.getElementById("listContainer");
   try {
-    const response = await fetch(APPS_SCRIPT_URL + "?nocache=" + Date.now());
-    allRecords = await response.json();
+    allRecords = await fetchPlacesRaw();
     listContainer.innerHTML = "";
 
     if (!Array.isArray(allRecords) || allRecords.length === 0){
