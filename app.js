@@ -85,7 +85,7 @@ const DRAG_THRESHOLD_PX = 12;
 const DRAFT_KEY = 'territory-mapper-draft-v1';
 const COVERAGE_DRAFT_KEY = 'territory-mapper-coverage-draft-v1';
 const PREVENT_TRACE_OVERLAP = true;
-const DECLUSTER_MIN_METERS = 30;
+const DECLUSTER_MIN_METERS = 0;
 const DECLUSTER_RADIUS_METERS = 28;
 
 const TOKEN_KEY = 'tm-auth-token';
