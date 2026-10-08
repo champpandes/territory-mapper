@@ -733,7 +733,7 @@ function findOverlappingTrace(newCoords){
 }
 
 /* ============================================================ TOASTS */
-function toast(msg, kind = 'info', ms = 2600){
+function toast(msg, kind = 'info', ms = 4000){
   const box = document.getElementById('toasts');
   const el = document.createElement('div');
   el.className = 'toast' + (kind !== 'info' ? ' ' + kind : '');
@@ -2753,7 +2753,7 @@ document.getElementById('userList')?.addEventListener('click', async (e) => {
     try {
       const res = await authPost({ action: 'deleteUser', userId, token: currentToken });
       if (!res || res.result !== 'success'){ toast((res && res.message) || 'Delete failed', 'error', 4000); return; }
-      toast(`Deleted "${userName}"`, 'success');
+      toast(`Deleted "${userName}"`, 'success', 5000);
       allUsersCache = allUsersCache.filter(u => String(u.id) !== String(userId));
       document.getElementById('userCount').textContent = String(allUsersCache.length);
       renderUserList();
