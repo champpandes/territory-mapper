@@ -316,8 +316,9 @@ body[data-role="viewer"]  [data-role="mapper"] {
 .pin-row .pin-name{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .pin-row .pin-type-small{font-size:.6rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint);padding:2px 6px;border-radius:99px;background:var(--surface);flex-shrink:0}
 .pin-row .pin-go{color:var(--text-faint);display:grid;place-items:center;flex-shrink:0}
-.pin-row .pin-del,.pin-row .pin-edit{background:transparent;border:none;padding:4px;border-radius:5px;cursor:pointer;color:var(--text-faint);display:grid;place-items:center;transition:all .14s;flex-shrink:0}
+.pin-row .pin-del,.pin-row .pin-edit,.pin-row .pin-jump{background:transparent;border:none;padding:4px;border-radius:5px;cursor:pointer;color:var(--text-faint);display:grid;place-items:center;transition:all .14s;flex-shrink:0}
 .pin-row .pin-edit:hover{background:var(--accent);color:#fff}
+.pin-row .pin-jump:hover{background:var(--green);color:#fff}
 .pin-row .pin-del:hover{background:var(--danger);color:#fff}
 .pin-row.filtered-out{display:none}
 

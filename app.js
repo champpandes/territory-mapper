@@ -3240,6 +3240,7 @@ function renderPinDetails(pins, key){
     if (isMapper()) {
         actions = `
           <button class="pin-edit" data-rename-pin="${esc(p.item.id)}" title="Rename">${svgIcon('edit', 12)}</button>
+          <button class="pin-jump" data-jump-pin="${esc(p.item.id)}" title="Jump to pin">${svgIcon('target', 12)}</button>
           <button class="pin-del" data-del="${esc(p.item.id)}" data-del-title="${esc(displayName)}" data-del-kind="pin" title="Delete">${svgIcon('trash', 12)}</button>
         `;
     }
@@ -3306,6 +3307,14 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
   if (renamePinBtn) {
     e.stopPropagation();
     renamePin(renamePinBtn.dataset.renamePin);
+    return;
+  }
+
+  // ADD THIS NEW BLOCK:
+  const jumpPinBtn = e.target.closest('[data-jump-pin]');
+  if (jumpPinBtn) {
+    e.stopPropagation();
+    jumpToPin(jumpPinBtn.dataset.jumpPin);
     return;
   }
   const addSubBtn = e.target.closest('[data-add-sub]');
