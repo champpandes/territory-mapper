@@ -1860,9 +1860,10 @@ function formatRelativeTime(iso){
 
 document.getElementById("pinSheetClose").addEventListener("click", closePinSheet);
 document.getElementById("pinSheetRename").addEventListener("click", () => {
-  if (!currentPinId) return;
+  const idToRename = currentPinId; // Capture ID before closing
+  if (!idToRename) return;
   closePinSheet();
-  renamePin(currentPinId);
+  renamePin(idToRename);
 });
 document.getElementById("pinSheetEdit").addEventListener("click", () => {
   if (!currentEditPin) return;
@@ -1889,11 +1890,12 @@ document.getElementById("pinSheetShare").addEventListener("click", () => {
   haptic(8);
 });
 document.getElementById("pinSheetDelete").addEventListener("click", async () => {
-  if (!currentPinId) return;
-  const entry = pinMarkerObjects.find(e => String(e.item.id) === String(currentPinId));
+  const idToDelete = currentPinId; // Capture ID before closing
+  if (!idToDelete) return;
+  const entry = pinMarkerObjects.find(e => String(e.item.id) === String(idToDelete));
   const title = entry ? (entry.item.title || entry.item.type) : "this pin";
   closePinSheet();
-  deleteRecord(currentPinId, title, "pin", null);
+  deleteRecord(idToDelete, title, "pin", null);
 });
 document.getElementById("pinSheetCommentPost").addEventListener("click", postComment);
 document.getElementById("pinSheetCommentInput").addEventListener("keydown", (e) => {
