@@ -85,7 +85,7 @@
     </div>
 
     <!-- COVERAGE (everyone) -->
-    <div class="section">
+    <div class="section" id="coveragePanel">
       <div class="sec-head"><span>Coverage</span></div>
       <button id="coverageBtn" class="btn btn-ghost" onclick="toggleCoverage()">
         <span class="ic" id="ic-coverage"></span> Mark a covered area
@@ -107,7 +107,7 @@
     </div>
 
     <!-- REQUEST A PIN (viewer only) -->
-    <div class="section" data-role="viewer">
+    <div class="section" data-role="viewer" id="requestPanel">
       <div class="sec-head"><span>Suggest a place</span></div>
       <button id="requestModeBtn" class="btn btn-ghost" onclick="toggleRequestMode()">
         <span class="ic" id="ic-request"></span> Request a pin
@@ -154,7 +154,7 @@
       </div>
     </div>
 
-    <div class="section" data-role="mapper">
+    <div class="section" data-role="mapper" id="pinPanel">
       <div class="sec-head"><span>Drop pins</span></div>
       <div class="chips" id="pinTypeChips">
         <button class="chip active" data-type="House"><span class="emoji-ic" data-ic="home"></span>House</button>
@@ -181,7 +181,7 @@
       </div>
     </div>
 
-    <div class="section" data-role="mapper">
+    <div class="section" data-role="mapper" id="tracePanel">
       <div class="sec-head"><span>Draw traces</span></div>
       <button id="traceBtn" class="btn btn-ghost" onclick="toggleTracing()">
         <span class="ic" id="ic-pencil"></span> Start manual tracing

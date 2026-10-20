@@ -1240,6 +1240,7 @@ function toggleCoverage(){
   const reqBtn = document.getElementById("requestModeBtn");
   if (reqBtn) reqBtn.disabled = true;
   document.getElementById("coverageActiveControls").hidden = false;
+  document.body.classList.add("is-coverage");
 
   rebuildPinMarkers();
   renderActiveTrace();
@@ -1289,6 +1290,7 @@ function resetCoverageMode(){
   const reqBtn = document.getElementById("requestModeBtn");
   if (reqBtn) reqBtn.disabled = false;
   document.getElementById("coverageActiveControls").hidden = true;
+  document.body.classList.remove("is-coverage");
   document.getElementById("panFab").hidden = true;
   rebuildPinMarkers();
   hideMapBadge();
@@ -1376,6 +1378,7 @@ function toggleRequestMode(){
 
   document.getElementById("requestModeBtn").hidden = true;
   document.getElementById("requestActiveControls").hidden = false;
+  document.body.classList.add("is-requesting");
   document.getElementById("coverageBtn").disabled = true;
 
   updateRequestControls();
@@ -1394,6 +1397,7 @@ function cancelRequestMode(){
   if (pendingRequestMarker){ pendingRequestMarker.setMap(null); pendingRequestMarker = null; }
   document.getElementById("requestModeBtn").hidden = false;
   document.getElementById("requestActiveControls").hidden = true;
+  document.body.classList.remove("is-requesting");
   document.getElementById("coverageBtn").disabled = false;
   document.getElementById("panFab").hidden = true;
   hideMapBadge();
@@ -1673,6 +1677,7 @@ function togglePinMode(){
   document.getElementById("traceBtn").disabled = true;
   document.getElementById("coverageBtn").disabled = true;
   document.getElementById("pinActiveControls").hidden = false;
+  document.body.classList.add("is-pinning");
   updatePanUI();
   showMapBadge("Pin mode — tap inside a traced area");
   haptic(12);
@@ -1758,6 +1763,7 @@ function resetPinMode(){
   document.getElementById("traceBtn").disabled = false;
   document.getElementById("coverageBtn").disabled = false;
   document.getElementById("pinActiveControls").hidden = true;
+  document.body.classList.remove("is-pinning");
   document.getElementById("panFab").hidden = true;
   hideMapBadge();
 }
@@ -2116,6 +2122,7 @@ function startTracing(parentId, silent){
   document.getElementById("pinModeBtn").disabled = true;
   document.getElementById("coverageBtn").disabled = true;
   document.getElementById("traceActiveControls").hidden = false;
+  document.body.classList.add("is-tracing");
 
   renderActiveTrace();
   updateTraceControls();
@@ -2482,6 +2489,7 @@ function resetTraceMode(){
   document.getElementById("pinModeBtn").disabled = false;
   document.getElementById("coverageBtn").disabled = false;
   document.getElementById("traceActiveControls").hidden = true;
+  document.body.classList.remove("is-tracing");
   document.getElementById("panFab").hidden = true;
   hideMapBadge();
 }

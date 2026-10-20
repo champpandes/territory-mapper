@@ -1049,10 +1049,21 @@ body[data-role="viewer"]  [data-role="mapper"] {
 
 /* ============================================================ EDIT MODE FOCUS */
 /* When editing a shape, hide all sidebar sections except the edit panel */
-body.is-editing .section:not(#editPanel) {
+/* ============================================================ FOCUS MODES */
+/* Hide all other sidebar sections when actively doing a task */
+body.is-editing .section:not(#editPanel),
+body.is-tracing .section:not(#tracePanel),
+body.is-pinning .section:not(#pinPanel),
+body.is-coverage .section:not(#coveragePanel),
+body.is-requesting .section:not(#requestPanel) {
   display: none !important;
 }
 
-body.is-editing #editPanel {
-  border-top: none; /* visually cleaner since the sections above are gone */
+/* Remove the top border for a cleaner look when focused */
+body.is-editing #editPanel,
+body.is-tracing #tracePanel,
+body.is-pinning #pinPanel,
+body.is-coverage #coveragePanel,
+body.is-requesting #requestPanel {
+  border-top: none; 
 }
