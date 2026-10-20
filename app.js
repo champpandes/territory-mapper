@@ -3234,6 +3234,16 @@ function renderPinDetails(pins, key){
     const cmtBadge = cmtCount
       ? `<span class="pin-cmt-badge">${svgIcon('comment',10,2.4)}<span>${cmtCount}</span></span>`
       : '';
+
+    // Only show edit/delete buttons to mappers and admins
+    let actions = '';
+    if (isMapper()) {
+        actions = `
+          <button class="pin-edit" data-rename-pin="${esc(p.item.id)}" title="Rename">${svgIcon('edit', 12)}</button>
+          <button class="pin-del" data-del="${esc(p.item.id)}" data-del-title="${esc(displayName)}" data-del-kind="pin" title="Delete">${svgIcon('trash', 12)}</button>
+        `;
+    }
+
     return `
       <div class="pin-row" data-goto-pin="${esc(p.item.id)}" data-search="${esc(searchText)}">
         <span class="pin-dot" style="background:${color}"></span>
@@ -3242,7 +3252,8 @@ function renderPinDetails(pins, key){
           ${badgeText ? `<span class="pin-type-small">${esc(badgeText)}</span>` : ''}
         </span>
         ${cmtBadge}
-        <span class="pin-go">${svgIcon('arrowRight', 13, 2.2)}</span>
+        ${actions}
+        <span class="pin-go" title="Open details">${svgIcon('arrowRight', 13, 2.2)}</span>
       </div>`;
   }).join('');
   return `<div class="pin-details" data-pins-for="${esc(key)}"><div class="pin-details-list">${rows}</div></div>`;
@@ -3290,6 +3301,13 @@ document.getElementById('listContainer').addEventListener('click', (e) => {
   const gotoPinRow = e.target.closest('[data-goto-pin]');
   if (gotoPinRow){ e.stopPropagation(); openPinSheet(gotoPinRow.dataset.gotoPin); return; }
 
+  // ADD THIS BLOCK:
+  const renamePinBtn = e.target.closest('[data-rename-pin]');
+  if (renamePinBtn) {
+    e.stopPropagation();
+    renamePin(renamePinBtn.dataset.renamePin);
+    return;
+  }
   const addSubBtn = e.target.closest('[data-add-sub]');
   if (addSubBtn){ e.stopPropagation(); startTracing(addSubBtn.dataset.addSub); return; }
 
