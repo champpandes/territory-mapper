@@ -1046,3 +1046,13 @@ body[data-role="viewer"]  [data-role="mapper"] {
   .admin-section{padding:16px 14px}
   .pin-sheet-action span:last-child{font-size:.6rem}
 }
+
+/* ============================================================ EDIT MODE FOCUS */
+/* When editing a shape, hide all sidebar sections except the edit panel */
+body.is-editing .section:not(#editPanel) {
+  display: none !important;
+}
+
+body.is-editing #editPanel {
+  border-top: none; /* visually cleaner since the sections above are gone */
+}

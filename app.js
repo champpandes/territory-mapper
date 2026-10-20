@@ -2502,6 +2502,7 @@ function startEditingTrace(itemId){
 
   const panel = document.getElementById("editPanel");
   panel.hidden = false;
+  document.body.classList.add("is-editing");
   const input = document.getElementById("editTraceNameInput");
   const notesInput = document.getElementById("editTraceNotesInput");
   input.value = t.item.title || "";
@@ -2684,6 +2685,7 @@ function cancelEditingTrace(){
   if (editingPolyline){ editingPolyline.setMap(null); editingPolyline = null; }
   if (editingFill){ editingFill.setMap(null); editingFill = null; }
   document.getElementById("editPanel").hidden = true;
+  document.body.classList.remove("is-editing");
   document.getElementById("pinModeBtn").disabled = false;
   document.getElementById("traceBtn").disabled = false;
   document.getElementById("coverageBtn").disabled = false;
