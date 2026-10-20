@@ -21,7 +21,9 @@ body{
 }
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:0}
 .ic svg{display:block}
-
+[hidden] {
+  display: none !important;
+}
 /* ============================================================ ROLE VISIBILITY */
 body[data-role="loading"] [data-role="mapper"],
 body[data-role="loading"] [data-role="viewer"],
