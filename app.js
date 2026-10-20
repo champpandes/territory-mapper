@@ -333,12 +333,19 @@ const PIN_SUBTYPES = {
   Store:    ['Mall', 'Small Store', 'Other Store'],
   Landmark: ['Road', 'Path Walk', 'Other Landmark']
 };
+
+// ADD THIS:
+const DEFAULT_SUBTYPES = {
+  House: 'Regular House',
+  Store: 'Small Store',
+  Landmark: 'Other Landmark'
+};
 const SUBTYPE_ICONS = {
   'Regular House':'home','Apartment':'building','Condo':'condo',
   'Mall':'mall','Small Store':'store','Other Store':'storeAlt',
   'Road':'road','Path Walk':'walk','Other Landmark':'flag'
 };
-let selectedSubtype = '';
+let selectedSubtype = DEFAULT_SUBTYPES['House'];
 
 function renderSubtypeChips(type, containerId = 'subtypeChips', selected = null){
   const container = document.getElementById(containerId);
@@ -1006,7 +1013,20 @@ function initMap(){
   }
 
   restoreSidebarState();
-  fetchPlacesFromSheet().then(() => {
+  initDataLoad();
+}
+
+let hasInitData = false;
+let isInitDataLoading = false;
+function initDataLoad() {
+  // Wait until BOTH the map and the auth user are ready
+  if (!map || !currentUser) return;
+  if (hasInitData || isInitDataLoading) return;
+  
+  isInitDataLoading = true;
+
+  fetchPlacesFromSheet().then((count) => {
+    if (count >= 0) hasInitData = true;
     loadCommentCounts();
     loadRequests();
 
@@ -1028,6 +1048,8 @@ function initMap(){
     } else if (draft) {
       localStorage.removeItem(DRAFT_KEY);
     }
+  }).finally(() => {
+    isInitDataLoading = false;
   });
 }
 
@@ -1128,8 +1150,11 @@ document.getElementById('pinTypeChips').addEventListener('click', (e) => {
   if (!chip) return;
   document.querySelectorAll('#pinTypeChips .chip').forEach(c => c.classList.remove('active'));
   chip.classList.add('active');
-  selectedSubtype = '';
-  renderSubtypeChips(chip.dataset.type, 'subtypeChips', '');
+  
+  // CHANGE THESE TWO LINES:
+  selectedSubtype = DEFAULT_SUBTYPES[chip.dataset.type] || '';
+  renderSubtypeChips(chip.dataset.type, 'subtypeChips', selectedSubtype);
+  
   haptic(6);
 });
 document.getElementById('subtypeChips').addEventListener('click', (e) => {
@@ -3485,11 +3510,12 @@ function goToCurrentGPS(){
 function onAuthReady(){
   applyRoleToBody();
   paintUserBar();
+  initDataLoad(); // <-- Add this line
 }
 
 window.addEventListener('load', async () => {
   renderStaticIcons();
-  renderSubtypeChips('House', 'subtypeChips', '');
+  renderSubtypeChips('House', 'subtypeChips', selectedSubtype);
   installBottomSheet();
   installKeyboardShortcuts();
   installLeaveWarning();
